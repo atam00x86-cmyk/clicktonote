@@ -269,8 +269,8 @@
             </div>
 
             <div class="action-section">
-                <button class="btn-clear" onclick="resetAllCounts()">🗑️ 一键清零 (Đưa về 0)</button>
-                <button class="btn-export" onclick="exportToExcel()">📥 导出 Excel 数据</button>
+                <button class="btn-clear" onclick="resetAllCounts()">🗑️ </button>
+                <button class="btn-export" onclick="exportToExcel()">📥 导出</button>
             </div>
         </div>
 
@@ -436,7 +436,7 @@
 
         // Chức năng Xóa toàn bộ số lượng đếm về 0
         function resetAllCounts() {
-            const confirmReset = confirm("您确定要将所有统计数据清零吗？\n(Bạn có chắc chắn muốn đưa TẤT CẢ số liệu đếm về 0 không?)");
+            const confirmReset = confirm("您确定要将所有统计数据清零吗？");
             if (confirmReset) {
                 state.forEach(category => {
                     category.items.forEach(item => {
@@ -445,7 +445,7 @@
                 });
                 saveData(); // Lưu lại vào local storage
                 renderHome(); // Render lại trang chủ để cập nhật tổng số
-                alert("所有数据已清零！\n(Toàn bộ số liệu đã được đặt về 0 thành công!)");
+                alert("所有数据已清零！");
             }
         }
 
