@@ -214,17 +214,19 @@
             font-style: italic;
         }
 
-        /* Khu vực xuất file */
-        .export-section {
-            text-align: center;
+        /* Khu vực nút chức năng trang chủ */
+        .action-section {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
             margin-top: 40px;
             padding-top: 20px;
             border-top: 1px dashed var(--border-color);
+            flex-wrap: wrap;
         }
 
-        .btn-export {
-            padding: 12px 30px;
-            background-color: var(--primary-color);
+        .btn-export, .btn-clear {
+            padding: 12px 25px;
             color: white;
             border: none;
             border-radius: 8px;
@@ -232,6 +234,10 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+        }
+
+        .btn-export {
+            background-color: var(--primary-color);
             box-shadow: 0 4px 6px rgba(74, 144, 226, 0.3);
         }
 
@@ -239,6 +245,17 @@
             background-color: var(--btn-hover);
             transform: translateY(-2px);
             box-shadow: 0 6px 10px rgba(74, 144, 226, 0.4);
+        }
+
+        .btn-clear {
+            background-color: #e74c3c;
+            box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-clear:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(231, 76, 60, 0.4);
         }
     </style>
 </head>
@@ -251,7 +268,8 @@
             <div id="menu-list">
             </div>
 
-            <div class="export-section">
+            <div class="action-section">
+                <button class="btn-clear" onclick="resetAllCounts()">🗑️ 一键清零 (Đưa về 0)</button>
                 <button class="btn-export" onclick="exportToExcel()">📥 导出 Excel 数据</button>
             </div>
         </div>
@@ -261,7 +279,7 @@
             <div id="detail-title" class="detail-title"></div>
             
             <div class="search-group">
-                <input type="text" id="search-input" placeholder="🔍 搜索 " oninput="filterItems()">
+                <input type="text" id="search-input" placeholder="🔍 搜索" oninput="filterItems()">
             </div>
             
             <div id="item-list">
@@ -307,12 +325,15 @@
             menuList.innerHTML = '';
 
             state.forEach((category, index) => {
+                // Tính tổng số lượng (count) của từng danh mục
+                const totalCount = category.items.reduce((sum, item) => sum + item.count, 0);
+                
                 const card = document.createElement('div');
                 card.className = 'menu-card';
                 card.innerHTML = `
                     <span>${category.title}</span>
                     <span style="font-size: 14px; color: #666; font-weight: normal;">
-                        (已记录: ${category.items.length} 项)
+                        (已记录: ${category.items.length} 项 | 总计: ${totalCount})
                     </span>
                 `;
                 card.onclick = () => openCategory(index);
@@ -331,7 +352,7 @@
         // Quay lại trang chủ
         function goBack() {
             currentCategoryIndex = null;
-            document.getElementById('search-input').value = ''; // Reset ô tìm kiếm khi quay lại
+            document.getElementById('search-input').value = ''; 
             document.getElementById('detail-view').classList.remove('active');
             document.getElementById('home-view').classList.add('active');
             renderHome();
@@ -378,11 +399,8 @@
                 });
             }
 
-            // Xóa input cũ sau khi render
             document.getElementById('new-item-input').value = '';
             document.getElementById('new-item-input').focus();
-            
-            // Gọi lại hàm filter để duy trì kết quả tìm kiếm (nếu người dùng vừa thêm mới lúc đang tìm kiếm)
             filterItems();
         }
 
@@ -391,7 +409,7 @@
             const item = state[currentCategoryIndex].items[itemIndex];
             if (item.count + change >= 0) {
                 item.count += change;
-                saveData(); // Lưu ngay vào bộ nhớ
+                saveData(); 
                 renderDetail();
             }
         }
@@ -402,7 +420,7 @@
             const val = input.value.trim();
             if (val !== "") {
                 state[currentCategoryIndex].items.push({ name: val, count: 0 });
-                saveData(); // Lưu ngay vào bộ nhớ
+                saveData(); 
                 renderDetail();
             } else {
                 alert("请输入项目名称！");
@@ -413,6 +431,21 @@
         function handleKeyPress(e) {
             if (e.key === 'Enter') {
                 addNewItem();
+            }
+        }
+
+        // Chức năng Xóa toàn bộ số lượng đếm về 0
+        function resetAllCounts() {
+            const confirmReset = confirm("您确定要将所有统计数据清零吗？\n(Bạn có chắc chắn muốn đưa TẤT CẢ số liệu đếm về 0 không?)");
+            if (confirmReset) {
+                state.forEach(category => {
+                    category.items.forEach(item => {
+                        item.count = 0; // Set count về 0
+                    });
+                });
+                saveData(); // Lưu lại vào local storage
+                renderHome(); // Render lại trang chủ để cập nhật tổng số
+                alert("所有数据已清零！\n(Toàn bộ số liệu đã được đặt về 0 thành công!)");
             }
         }
 
