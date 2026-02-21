@@ -5,50 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>运营问题反馈</title>
     
-    <script>
-        // --- 🛑 THAY BẰNG WEB APP URL CỦA BẠN (TỪ GOOGLE APPS SCRIPT) ---
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzjqfJpxBOXrZwd5TQuVEJcSX7iPke9EwAxRZWsw8nh81lPdFFIXy7eajb9ap7qtmlEjA/exec'; 
-
-        async function checkAccess() {
-            try {
-                // 1. Lấy IP của người dùng hiện tại
-                const ipRes = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipRes.json();
-                const userIP = ipData.ip;
-
-                // 2. Lấy danh sách IP được phép từ Google Sheet (thông qua hàm doGet trong Script)
-                const sheetRes = await fetch(GOOGLE_SHEET_URL);
-                const allowedIPs = await sheetRes.json();
-
-                // 3. Nếu IP không nằm trong danh sách từ Database
-                if (!allowedIPs.includes(userIP)) {
-                    document.documentElement.innerHTML = `
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>Access Denied</title>
-                        </head>
-                        <body style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f7f6; font-family:sans-serif; margin:0;">
-                            <div style="text-align:center; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
-                                <h1 style="color:#e74c3c; margin-bottom: 10px; font-size: 32px;">⛔ 访问被拒绝</h1>
-                                <p style="color:#333; font-size: 16px; margin-top: 20px;">
-                                    您的IP: <b style="color: #4a90e2;">${userIP}</b><br>
-                                    不在允许列表中 (Database)
-                                </p>
-                            </div>
-                        </body>
-                    `;
-                } else {
-                    // Nếu hợp lệ, khởi chạy ứng dụng
-                    loadData();
-                    renderHome();
-                }
-            } catch (error) {
-                console.error("无法检测 IP", error);
-                // Nếu lỗi kết nối DB, bạn có thể chọn chặn hoặc cho qua (tùy bảo mật)
-            }
-        }
-    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -60,33 +16,47 @@
             --btn-hover: #357ab8;
         }
 
+        /* Loading Overlay để tăng tốc cảm giác và bảo mật */
+        #auth-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #f4f7f6;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center;
         }
 
         .container {
-            width: 100%;
-            max-width: 800px;
+            width: 100%; max-width: 800px;
             background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
+            padding: 30px; border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.05);
             min-height: 400px;
         }
 
-        h1 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-top: 0;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
+        h1 { text-align: center; color: var(--primary-color); margin-top: 0; margin-bottom: 30px; font-size: 28px; }
 
         .view { display: none; }
         .view.active { display: block; animation: fadeIn 0.3s ease; }
@@ -99,15 +69,9 @@
         .menu-card {
             background-color: #fafbfc;
             border: 1px solid var(--border-color);
-            padding: 18px 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 18px 20px; border-radius: 8px;
+            margin-bottom: 15px; font-size: 18px; font-weight: 600;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
             transition: all 0.2s;
         }
 
@@ -117,209 +81,96 @@
             border-color: var(--primary-color);
         }
 
-        .menu-card::after {
-            content: '\276F';
-            color: #999;
-            font-size: 16px;
-        }
+        .menu-card::after { content: '\276F'; color: #999; font-size: 16px; }
 
         .btn-back {
-            background-color: transparent;
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 20px;
-            transition: background 0.2s;
-        }
-
-        .btn-back:hover {
-            background-color: #f1f3f5;
+            background-color: transparent; border: 1px solid var(--border-color);
+            padding: 8px 15px; border-radius: 6px; cursor: pointer;
+            font-size: 14px; font-weight: bold; margin-bottom: 20px;
         }
 
         .detail-title {
-            color: var(--primary-color);
-            font-size: 20px;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .search-group {
-            margin-bottom: 15px;
+            color: var(--primary-color); font-size: 20px;
+            margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color);
         }
 
         .search-group input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 15px;
-            box-sizing: border-box;
-            transition: border-color 0.2s;
-        }
-
-        .search-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+            width: 100%; padding: 10px 15px;
+            border: 1px solid var(--border-color); border-radius: 6px;
+            font-size: 15px; box-sizing: border-box;
         }
 
         .item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fdfdfd;
-            border: 1px solid #eee;
-            padding: 12px 15px;
-            border-radius: 6px;
-            margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: #fdfdfd; border: 1px solid #eee;
+            padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;
         }
 
-        .item-name {
-            flex-grow: 1;
-            font-size: 16px;
-            padding-right: 10px;
-            word-break: break-all;
-        }
+        .item-name { flex-grow: 1; font-size: 16px; word-break: break-all; }
 
-        .item-actions {
-            display: flex;
-            gap: 8px;
-            margin-right: 15px;
-        }
+        .item-actions { display: flex; gap: 8px; margin-right: 15px; }
 
         .btn-icon {
-            background: transparent;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 4px 6px;
-            font-size: 14px;
-            transition: all 0.2s;
-            color: #555;
+            background: transparent; border: 1px solid #ccc;
+            border-radius: 4px; cursor: pointer; padding: 4px 6px;
         }
 
-        .btn-icon:hover {
-            background: #e1e4e8;
-            border-color: #999;
-        }
-
-        .counter-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .counter-group { display: flex; align-items: center; gap: 15px; }
 
         .btn-count {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background 0.2s;
+            width: 32px; height: 32px; border: none; border-radius: 50%;
+            background-color: var(--primary-color); color: white;
+            font-size: 18px; cursor: pointer;
         }
 
-        .btn-count:hover { background-color: var(--btn-hover); }
         .btn-count.minus { background-color: #e74c3c; }
-        .btn-count.minus:hover { background-color: #c0392b; }
 
-        .count-display {
-            font-weight: bold;
-            font-size: 18px;
-            min-width: 30px;
-            text-align: center;
-        }
+        .count-display { font-weight: bold; font-size: 18px; min-width: 30px; text-align: center; }
 
-        .add-item-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
+        .add-item-group { display: flex; gap: 10px; margin-top: 20px; }
 
         .add-item-group input {
-            flex-grow: 1;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 15px;
+            flex-grow: 1; padding: 12px;
+            border: 1px solid var(--border-color); border-radius: 6px;
         }
 
         .btn-add {
-            padding: 10px 25px;
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            white-space: nowrap;
-            transition: background 0.2s;
-        }
-
-        .btn-add:hover { background-color: #27ae60; }
-
-        .empty-msg {
-            text-align: center;
-            color: #999;
-            padding: 20px;
-            font-style: italic;
+            padding: 10px 25px; background-color: #2ecc71;
+            color: white; border: none; border-radius: 6px;
+            cursor: pointer; font-weight: 600;
         }
 
         .action-section {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px dashed var(--border-color);
-            flex-wrap: wrap;
+            display: flex; justify-content: center; gap: 15px;
+            margin-top: 40px; padding-top: 20px;
+            border-top: 1px dashed var(--border-color); flex-wrap: wrap;
         }
 
         .btn-export, .btn-clear, .btn-sync {
-            padding: 12px 25px;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 12px 25px; color: white; border: none;
+            border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
         }
 
-        .btn-export { background-color: var(--primary-color); box-shadow: 0 4px 6px rgba(74, 144, 226, 0.3); }
-        .btn-export:hover { background-color: var(--btn-hover); transform: translateY(-2px); box-shadow: 0 6px 10px rgba(74, 144, 226, 0.4); }
-
-        .btn-clear { background-color: #e74c3c; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3); }
-        .btn-clear:hover { background-color: #c0392b; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(231, 76, 60, 0.4); }
-
-        .btn-sync { background-color: #27ae60; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); }
-        .btn-sync:hover { background-color: #219a52; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(39, 174, 96, 0.4); }
-        .btn-sync:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-export { background-color: var(--primary-color); }
+        .btn-clear { background-color: #e74c3c; }
+        .btn-sync { background-color: #27ae60; }
+        .btn-sync:disabled { background-color: #95a5a6; }
     </style>
 </head>
 <body>
+
+    <div id="auth-overlay">
+        <div class="loader"></div>
+        <p id="auth-status" style="color:#666;">🔐 正在验证权限 (Đang xác thực quyền truy cập)...</p>
+    </div>
 
     <div class="container">
         <h1>运营问题反馈</h1>
         
         <div id="home-view" class="view">
             <div id="menu-list"></div>
-
             <div class="action-section">
-                <button class="btn-clear" onclick="resetAllCounts()">🗑️ 一键清零</button>
+                <button class="btn-clear" onclick="resetAllCounts()">🗑️ </button>
                 <button class="btn-export" onclick="exportToExcel()">📥 导出</button>
                 <button class="btn-sync" id="btnSync" onclick="syncToGoogleSheet()">🔄 同步 Google Sheet</button>
             </div>
@@ -328,13 +179,8 @@
         <div id="detail-view" class="view">
             <button class="btn-back" onclick="goBack()">🔙 返回</button>
             <div id="detail-title" class="detail-title"></div>
-            
-            <div class="search-group">
-                <input type="text" id="search-input" placeholder="🔍 搜索" oninput="filterItems()">
-            </div>
-            
-            <div id="item-list"></div>
-
+            <div class="search-group"><input type="text" id="search-input" placeholder="🔍 搜索" oninput="filterItems()"></div>
+            <div id="item-list" style="margin-top:15px;"></div>
             <div class="add-item-group">
                 <input type="text" id="new-item-input" placeholder="输入新项目名称..." onkeypress="handleKeyPress(event)">
                 <button class="btn-add" onclick="addNewItem()">添加</button>
@@ -343,10 +189,40 @@
     </div>
 
     <script>
-        // Cấu trúc dữ liệu mặc định
+        // --- 🛑 CẤU HÌNH WEB APP URL ---
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzjqfJpxBOXrZwd5TQuVEJcSX7iPke9EwAxRZWsw8nh81lPdFFIXy7eajb9ap7qtmlEjA/exec'; 
+
+        // 1. KIỂM TRA BẢO MẬT TỐC ĐỘ CAO (CALL SONG SONG)
+        async function checkAccess() {
+            try {
+                // Gọi song song lấy IP và lấy Database IP từ Sheet
+                const [ipRes, sheetRes] = await Promise.all([
+                    fetch('https://api.ipify.org?format=json').then(r => r.json()),
+                    fetch(GOOGLE_SHEET_URL).then(r => r.json())
+                ]);
+
+                const userIP = ipRes.ip;
+                const allowedIPs = sheetRes;
+
+                if (allowedIPs.includes(userIP)) {
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    loadData();
+                    renderHome();
+                } else {
+                    document.getElementById('auth-status').innerHTML = `
+                        <b style="color:#e74c3c; font-size:20px;">⛔ 访问被拒绝</b><br>
+                        您的IP: ${userIP}<br>不在允许列表中。
+                    `;
+                    document.querySelector('.loader').style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('auth-status').innerText = "❌ 授权服务器连接失败 (Lỗi kết nối Server)";
+            }
+        }
+
         const defaultState = [
             { id: 0, title: "1. 资金不同步，协助回收", items: [] },
-            { id: 1, title: "2. 会员反馈资金掉失/转移異常", items: [] },
+            { id: 1, title: "2. 会员反馈资金掉失/转移异常", items: [] },
             { id: 2, title: "3. 注单结算错误", items: [] },
             { id: 3, title: "4. 注单未结算问题", items: [] }
         ];
@@ -355,42 +231,28 @@
         let currentCategoryIndex = null;
 
         function loadData() {
-            const savedData = localStorage.getItem('feedbackData');
-            if (savedData) {
-                state = JSON.parse(savedData);
-            } else {
-                state = JSON.parse(JSON.stringify(defaultState));
-            }
+            const saved = localStorage.getItem('feedbackData');
+            state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultState));
         }
 
-        function saveData() {
-            localStorage.setItem('feedbackData', JSON.stringify(state));
-        }
+        function saveData() { localStorage.setItem('feedbackData', JSON.stringify(state)); }
 
         function renderHome() {
-            const homeView = document.getElementById('home-view');
-            homeView.classList.add('active'); // Hiện trang chủ khi đã check xong
+            document.getElementById('home-view').classList.add('active');
             const menuList = document.getElementById('menu-list');
             menuList.innerHTML = '';
-
-            state.forEach((category, index) => {
-                const totalCount = category.items.reduce((sum, item) => sum + item.count, 0);
-                
+            state.forEach((cat, idx) => {
+                const total = cat.items.reduce((s, i) => s + i.count, 0);
                 const card = document.createElement('div');
                 card.className = 'menu-card';
-                card.innerHTML = `
-                    <span>${category.title}</span>
-                    <span style="font-size: 14px; color: #666; font-weight: normal;">
-                        (已记录: ${category.items.length} 项 | 总计: ${totalCount})
-                    </span>
-                `;
-                card.onclick = () => openCategory(index);
+                card.innerHTML = `<span>${cat.title}</span><span style="font-size:14px;color:#666;font-weight:normal;">(${cat.items.length}项 | 总计:${total})</span>`;
+                card.onclick = () => openCategory(idx);
                 menuList.appendChild(card);
             });
         }
 
-        function openCategory(index) {
-            currentCategoryIndex = index;
+        function openCategory(idx) {
+            currentCategoryIndex = idx;
             document.getElementById('home-view').classList.remove('active');
             document.getElementById('detail-view').classList.add('active');
             renderDetail();
@@ -398,146 +260,93 @@
 
         function goBack() {
             currentCategoryIndex = null;
-            document.getElementById('search-input').value = ''; 
             document.getElementById('detail-view').classList.remove('active');
             document.getElementById('home-view').classList.add('active');
             renderHome();
         }
 
-        function filterItems() {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const rows = document.querySelectorAll('.item-row');
-            
-            rows.forEach(row => {
-                const itemName = row.querySelector('.item-name').innerText.toLowerCase();
-                row.style.display = itemName.includes(searchTerm) ? 'flex' : 'none';
+        function renderDetail() {
+            const cat = state[currentCategoryIndex];
+            document.getElementById('detail-title').innerText = cat.title;
+            const list = document.getElementById('item-list');
+            list.innerHTML = cat.items.length ? '' : '<div class="empty-msg">暂无项目</div>';
+            cat.items.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-actions">
+                        <button class="btn-icon" onclick="editItem(${idx})">✏️</button>
+                        <button class="btn-icon" onclick="deleteItem(${idx})">🗑️</button>
+                    </div>
+                    <div class="counter-group">
+                        <button class="btn-count minus" onclick="updateCount(${idx}, -1)">-</button>
+                        <span class="count-display">${item.count}</span>
+                        <button class="btn-count" onclick="updateCount(${idx}, 1)">+</button>
+                    </div>`;
+                list.appendChild(row);
             });
         }
 
-        function renderDetail() {
-            const category = state[currentCategoryIndex];
-            document.getElementById('detail-title').innerText = category.title;
-            
-            const itemList = document.getElementById('item-list');
-            itemList.innerHTML = '';
-
-            if (category.items.length === 0) {
-                itemList.innerHTML = '<div class="empty-msg">暂无项目，请在下方添加。</div>';
-            } else {
-                category.items.forEach((item, itemIndex) => {
-                    const row = document.createElement('div');
-                    row.className = 'item-row';
-                    row.innerHTML = `
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-actions">
-                            <button class="btn-icon" onclick="editItem(${itemIndex})" title="编辑">✏️</button>
-                            <button class="btn-icon" onclick="deleteItem(${itemIndex})" title="删除">🗑️</button>
-                        </div>
-                        <div class="counter-group">
-                            <button class="btn-count minus" onclick="updateCount(${itemIndex}, -1)">-</button>
-                            <span class="count-display">${item.count}</span>
-                            <button class="btn-count plus" onclick="updateCount(${itemIndex}, 1)">+</button>
-                        </div>
-                    `;
-                    itemList.appendChild(row);
-                });
-            }
-
-            document.getElementById('new-item-input').value = '';
-            document.getElementById('new-item-input').focus();
-            filterItems();
-        }
-
-        function editItem(itemIndex) {
-            const item = state[currentCategoryIndex].items[itemIndex];
-            const newName = prompt("请输入新的项目名称:", item.name);
-            if (newName && newName.trim() !== "") {
-                item.name = newName.trim();
-                saveData(); renderDetail();
-            }
-        }
-
-        function deleteItem(itemIndex) {
-            const item = state[currentCategoryIndex].items[itemIndex];
-            if (confirm(`您确定要删除 "${item.name}" 吗？`)) {
-                state[currentCategoryIndex].items.splice(itemIndex, 1);
-                saveData(); renderDetail();
-            }
-        }
-
-        function updateCount(itemIndex, change) {
-            const item = state[currentCategoryIndex].items[itemIndex];
-            if (item.count + change >= 0) {
-                item.count += change;
+        function updateCount(idx, chg) {
+            if (state[currentCategoryIndex].items[idx].count + chg >= 0) {
+                state[currentCategoryIndex].items[idx].count += chg;
                 saveData(); renderDetail();
             }
         }
 
         function addNewItem() {
             const input = document.getElementById('new-item-input');
-            const val = input.value.trim();
-            if (val !== "") {
-                state[currentCategoryIndex].items.push({ name: val, count: 0 });
-                saveData(); renderDetail();
-            } else {
-                alert("请输入项目名称！");
+            if (input.value.trim()) {
+                state[currentCategoryIndex].items.push({ name: input.value.trim(), count: 0 });
+                saveData(); renderDetail(); input.value = '';
             }
+        }
+
+        function editItem(idx) {
+            const n = prompt("新名称:", state[currentCategoryIndex].items[idx].name);
+            if (n) { state[currentCategoryIndex].items[idx].name = n; saveData(); renderDetail(); }
+        }
+
+        function deleteItem(idx) {
+            if (confirm("确定删除？")) { state[currentCategoryIndex].items.splice(idx, 1); saveData(); renderDetail(); }
+        }
+
+        function resetAllCounts() {
+            if (confirm("全部清零？")) { state.forEach(c => c.items.forEach(i => i.count = 0)); saveData(); renderHome(); }
+        }
+
+        function filterItems() {
+            const t = document.getElementById('search-input').value.toLowerCase();
+            document.querySelectorAll('.item-row').forEach(r => r.style.display = r.querySelector('.item-name').innerText.toLowerCase().includes(t) ? 'flex' : 'none');
         }
 
         function handleKeyPress(e) { if (e.key === 'Enter') addNewItem(); }
 
-        function resetAllCounts() {
-            if (confirm("您确定要将所有统计数据清零吗？")) {
-                state.forEach(category => category.items.forEach(item => item.count = 0));
-                saveData(); renderHome();
-                alert("所有数据已清零！");
-            }
-        }
-
         function exportToExcel() {
-            let exportData = [];
-            state.forEach(category => {
-                if (category.items.length === 0) {
-                    exportData.push({ "分类": category.title, "详细项目": "暂无数据", "数量": 0 });
-                } else {
-                    category.items.forEach(item => {
-                        exportData.push({ "分类": category.title, "详细项目": item.name, "数量": item.count });
-                    });
-                }
-            });
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "问题统计");
-            const date = new Date();
-            const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
-            XLSX.writeFile(workbook, `运营问题统计_${dateString}.xlsx`);
+            let d = [];
+            state.forEach(c => c.items.forEach(i => d.push({"分类": c.title, "项目": i.name, "数量": i.count})));
+            const ws = XLSX.utils.json_to_sheet(d);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            XLSX.writeFile(wb, `Report_${new Date().getTime()}.xlsx`);
         }
 
         async function syncToGoogleSheet() {
-            if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.includes('YOUR_WEB_APP_URL')) {
-                alert("请先设置 Google Sheet URL！");
-                return;
-            }
-            const btnSync = document.getElementById('btnSync');
-            btnSync.innerText = "⏳ 同步中...";
-            btnSync.disabled = true;
+            const btn = document.getElementById('btnSync');
+            btn.innerText = "⏳ 同步中..."; btn.disabled = true;
             try {
-                const response = await fetch(GOOGLE_SHEET_URL, {
+                const res = await fetch(GOOGLE_SHEET_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(state)
                 });
-                if (response.ok) alert("✅ 同步成功！");
-                else throw new Error('Error');
-            } catch (error) {
-                alert("❌ 同步失败");
-            } finally {
-                btnSync.innerText = "🔄 同步 Google Sheet";
-                btnSync.disabled = false;
-            }
+                if (res.ok) alert("✅ 同步成功！");
+            } catch (e) { alert("❌ 同步失败"); }
+            btn.innerText = "🔄 同步 Google Sheet"; btn.disabled = false;
         }
 
-        // BẮT ĐẦU CHẠY KIỂM TRA BẢO MẬT
+        // Khởi chạy kiểm tra bảo mật ngay lập tức
         checkAccess();
     </script>
 </body>
