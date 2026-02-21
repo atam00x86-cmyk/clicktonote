@@ -6,20 +6,22 @@
     <title>运营问题反馈</title>
     
     <script>
-        // Danh sách các IP được phép truy cập. 
-        // 🛑 THAY BẰNG IP CỦA BẠN (HOẶC IP CỦA VPN) VÀO ĐÂY!
-        const ALLOWED_IPS = [
-            '180.232.127.105', // Ví dụ IP 1
-            '14.232.100.12'
-        ];
+        // --- 🛑 THAY BẰNG WEB APP URL CỦA BẠN (TỪ GOOGLE APPS SCRIPT) ---
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzjqfJpxBOXrZwd5TQuVEJcSX7iPke9EwAxRZWsw8nh81lPdFFIXy7eajb9ap7qtmlEjA/exec'; 
 
-        fetch('https://api.ipify.org?format=json')
-            .then(response => response.json())
-            .then(data => {
-                const userIP = data.ip;
-                // Nếu IP của người dùng không nằm trong danh sách
-                if (!ALLOWED_IPS.includes(userIP)) {
-                    // Xóa trắng web và hiện thông báo lỗi
+        async function checkAccess() {
+            try {
+                // 1. Lấy IP của người dùng hiện tại
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                const userIP = ipData.ip;
+
+                // 2. Lấy danh sách IP được phép từ Google Sheet (thông qua hàm doGet trong Script)
+                const sheetRes = await fetch(GOOGLE_SHEET_URL);
+                const allowedIPs = await sheetRes.json();
+
+                // 3. Nếu IP không nằm trong danh sách từ Database
+                if (!allowedIPs.includes(userIP)) {
                     document.documentElement.innerHTML = `
                         <head>
                             <meta charset="UTF-8">
@@ -31,14 +33,21 @@
                                 <h1 style="color:#e74c3c; margin-bottom: 10px; font-size: 32px;">⛔ 访问被拒绝</h1>
                                 <p style="color:#333; font-size: 16px; margin-top: 20px;">
                                     您的IP: <b style="color: #4a90e2;">${userIP}</b><br>
-                                    不在允许列表中
+                                    不在允许列表中 (Database)
                                 </p>
                             </div>
                         </body>
                     `;
+                } else {
+                    // Nếu hợp lệ, khởi chạy ứng dụng
+                    loadData();
+                    renderHome();
                 }
-            })
-            .catch(error => console.error("无法检测 IP", error));
+            } catch (error) {
+                console.error("无法检测 IP", error);
+                // Nếu lỗi kết nối DB, bạn có thể chọn chặn hoặc cho qua (tùy bảo mật)
+            }
+        }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -296,7 +305,6 @@
         .btn-clear { background-color: #e74c3c; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3); }
         .btn-clear:hover { background-color: #c0392b; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(231, 76, 60, 0.4); }
 
-        /* Nút Đồng bộ mới */
         .btn-sync { background-color: #27ae60; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); }
         .btn-sync:hover { background-color: #219a52; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(39, 174, 96, 0.4); }
         .btn-sync:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -307,7 +315,7 @@
     <div class="container">
         <h1>运营问题反馈</h1>
         
-        <div id="home-view" class="view active">
+        <div id="home-view" class="view">
             <div id="menu-list"></div>
 
             <div class="action-section">
@@ -335,12 +343,10 @@
     </div>
 
     <script>
-        // --- 🛑 THAY BẰNG WEB APP URL CỦA BẠN (TỪ GOOGLE APPS SCRIPT) ---
-        const GOOGLE_SHEET_URL = 'YOUR_WEB_APP_URL'; 
-
+        // Cấu trúc dữ liệu mặc định
         const defaultState = [
             { id: 0, title: "1. 资金不同步，协助回收", items: [] },
-            { id: 1, title: "2. 会员反馈资金掉失/转移异常", items: [] },
+            { id: 1, title: "2. 会员反馈资金掉失/转移異常", items: [] },
             { id: 2, title: "3. 注单结算错误", items: [] },
             { id: 3, title: "4. 注单未结算问题", items: [] }
         ];
@@ -362,6 +368,8 @@
         }
 
         function renderHome() {
+            const homeView = document.getElementById('home-view');
+            homeView.classList.add('active'); // Hiện trang chủ khi đã check xong
             const menuList = document.getElementById('menu-list');
             menuList.innerHTML = '';
 
@@ -402,11 +410,7 @@
             
             rows.forEach(row => {
                 const itemName = row.querySelector('.item-name').innerText.toLowerCase();
-                if (itemName.includes(searchTerm)) {
-                    row.style.display = 'flex';
-                } else {
-                    row.style.display = 'none';
-                }
+                row.style.display = itemName.includes(searchTerm) ? 'flex' : 'none';
             });
         }
 
@@ -426,8 +430,8 @@
                     row.innerHTML = `
                         <div class="item-name">${item.name}</div>
                         <div class="item-actions">
-                            <button class="btn-icon" onclick="editItem(${itemIndex})" title="编辑 (Sửa tên)">✏️</button>
-                            <button class="btn-icon" onclick="deleteItem(${itemIndex})" title="删除 (Xóa)">🗑️</button>
+                            <button class="btn-icon" onclick="editItem(${itemIndex})" title="编辑">✏️</button>
+                            <button class="btn-icon" onclick="deleteItem(${itemIndex})" title="删除">🗑️</button>
                         </div>
                         <div class="counter-group">
                             <button class="btn-count minus" onclick="updateCount(${itemIndex}, -1)">-</button>
@@ -444,41 +448,28 @@
             filterItems();
         }
 
-        // --- ĐÃ BỔ SUNG HÀM SỬA VÀ XÓA BỊ THIẾU ---
         function editItem(itemIndex) {
             const item = state[currentCategoryIndex].items[itemIndex];
-            const newName = prompt("请输入新的项目名称 (Nhập tên mới cho dự án):", item.name);
-            
-            if (newName !== null) { 
-                const trimmedName = newName.trim();
-                if (trimmedName !== "") {
-                    item.name = trimmedName;
-                    saveData();
-                    renderDetail();
-                } else {
-                    alert("项目名称不能为空！(Tên không được để trống!)");
-                }
+            const newName = prompt("请输入新的项目名称:", item.name);
+            if (newName && newName.trim() !== "") {
+                item.name = newName.trim();
+                saveData(); renderDetail();
             }
         }
 
         function deleteItem(itemIndex) {
             const item = state[currentCategoryIndex].items[itemIndex];
-            const isConfirmed = confirm(`您确定要删除 "${item.name}" 吗？\n(Bạn có chắc chắn muốn xóa mục "${item.name}" không?)`);
-            
-            if (isConfirmed) {
+            if (confirm(`您确定要删除 "${item.name}" 吗？`)) {
                 state[currentCategoryIndex].items.splice(itemIndex, 1);
-                saveData();
-                renderDetail();
+                saveData(); renderDetail();
             }
         }
-        // --- KẾT THÚC HÀM BỔ SUNG ---
 
         function updateCount(itemIndex, change) {
             const item = state[currentCategoryIndex].items[itemIndex];
             if (item.count + change >= 0) {
                 item.count += change;
-                saveData(); 
-                renderDetail();
+                saveData(); renderDetail();
             }
         }
 
@@ -487,102 +478,67 @@
             const val = input.value.trim();
             if (val !== "") {
                 state[currentCategoryIndex].items.push({ name: val, count: 0 });
-                saveData(); 
-                renderDetail();
+                saveData(); renderDetail();
             } else {
                 alert("请输入项目名称！");
             }
         }
 
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') {
-                addNewItem();
-            }
-        }
+        function handleKeyPress(e) { if (e.key === 'Enter') addNewItem(); }
 
         function resetAllCounts() {
-            const confirmReset = confirm("您确定要将所有统计数据清零吗？\n(Bạn có chắc chắn muốn đưa TẤT CẢ số liệu đếm về 0 không?)");
-            if (confirmReset) {
-                state.forEach(category => {
-                    category.items.forEach(item => {
-                        item.count = 0;
-                    });
-                });
-                saveData(); 
-                renderHome(); 
-                alert("所有数据已清零！\n(Toàn bộ số liệu đã được đặt về 0 thành công!)");
+            if (confirm("您确定要将所有统计数据清零吗？")) {
+                state.forEach(category => category.items.forEach(item => item.count = 0));
+                saveData(); renderHome();
+                alert("所有数据已清零！");
             }
         }
 
         function exportToExcel() {
             let exportData = [];
-            
             state.forEach(category => {
                 if (category.items.length === 0) {
-                    exportData.push({
-                        "分类": category.title,
-                        "详细项目": "暂无数据",
-                        "数量": 0
-                    });
+                    exportData.push({ "分类": category.title, "详细项目": "暂无数据", "数量": 0 });
                 } else {
                     category.items.forEach(item => {
-                        exportData.push({
-                            "分类": category.title,
-                            "详细项目": item.name,
-                            "数量": item.count
-                        });
+                        exportData.push({ "分类": category.title, "详细项目": item.name, "数量": item.count });
                     });
                 }
             });
-
             const worksheet = XLSX.utils.json_to_sheet(exportData);
-            const wscols = [{wch: 35}, {wch: 40}, {wch: 15}];
-            worksheet['!cols'] = wscols;
-
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "问题统计");
-
             const date = new Date();
             const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
             XLSX.writeFile(workbook, `运营问题统计_${dateString}.xlsx`);
         }
 
-        // --- HÀM GỬI LÊN GOOGLE SHEET ---
         async function syncToGoogleSheet() {
-            if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL === 'YOUR_WEB_APP_URL') {
-                alert("请先设置 Google Sheet URL！\n(Vui lòng thiết lập Link Google Sheet trong code trước!)");
+            if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.includes('YOUR_WEB_APP_URL')) {
+                alert("请先设置 Google Sheet URL！");
                 return;
             }
-
             const btnSync = document.getElementById('btnSync');
-            const originalText = btnSync.innerText;
-            btnSync.innerText = "⏳ 同步中... (Đang đồng bộ)";
+            btnSync.innerText = "⏳ 同步中...";
             btnSync.disabled = true;
-
             try {
                 const response = await fetch(GOOGLE_SHEET_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(state)
                 });
-
-                if (response.ok) {
-                    alert("✅ 同步成功！数据已更新到 Google Sheet。\n(Đồng bộ thành công!)");
-                } else {
-                    throw new Error('Network response was not ok');
-                }
+                if (response.ok) alert("✅ 同步成功！");
+                else throw new Error('Error');
             } catch (error) {
-                console.error('Lỗi khi đồng bộ:', error);
-                alert("❌ 同步失败，请检查网络或 URL！\n(Đồng bộ thất bại, vui lòng kiểm tra mạng hoặc Link URL!)");
+                alert("❌ 同步失败");
             } finally {
-                btnSync.innerText = originalText;
+                btnSync.innerText = "🔄 同步 Google Sheet";
                 btnSync.disabled = false;
             }
         }
 
-        // Khởi chạy ứng dụng
-        loadData();
-        renderHome();
+        // BẮT ĐẦU CHẠY KIỂM TRA BẢO MẬT
+        checkAccess();
     </script>
 </body>
 </html>
