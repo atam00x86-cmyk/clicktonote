@@ -144,6 +144,31 @@
         .item-name {
             flex-grow: 1;
             font-size: 16px;
+            padding-right: 10px;
+            word-break: break-all;
+        }
+
+        /* Cụm nút Sửa / Xóa */
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+            color: #555;
+        }
+
+        .btn-icon:hover {
+            background: #e1e4e8;
+            border-color: #999;
         }
 
         .counter-group {
@@ -286,7 +311,7 @@
             </div>
 
             <div class="add-item-group">
-                <input type="text" id="new-item-input" placeholder="输入需要追踪的新项目名称..." onkeypress="handleKeyPress(event)">
+                <input type="text" id="new-item-input" placeholder="输入新项目名称..." onkeypress="handleKeyPress(event)">
                 <button class="btn-add" onclick="addNewItem()">添加</button>
             </div>
         </div>
@@ -325,7 +350,6 @@
             menuList.innerHTML = '';
 
             state.forEach((category, index) => {
-                // Tính tổng số lượng (count) của từng danh mục
                 const totalCount = category.items.reduce((sum, item) => sum + item.count, 0);
                 
                 const card = document.createElement('div');
@@ -387,8 +411,13 @@
                 category.items.forEach((item, itemIndex) => {
                     const row = document.createElement('div');
                     row.className = 'item-row';
+                    // Đã thêm thẻ item-actions chứa nút Sửa và Xóa
                     row.innerHTML = `
                         <div class="item-name">${item.name}</div>
+                        <div class="item-actions">
+                            <button class="btn-icon" onclick="editItem(${itemIndex})" title="编辑 (Sửa tên)">✏️</button>
+                            <button class="btn-icon" onclick="deleteItem(${itemIndex})" title="删除 (Xóa)">🗑️</button>
+                        </div>
                         <div class="counter-group">
                             <button class="btn-count minus" onclick="updateCount(${itemIndex}, -1)">-</button>
                             <span class="count-display">${item.count}</span>
@@ -402,6 +431,36 @@
             document.getElementById('new-item-input').value = '';
             document.getElementById('new-item-input').focus();
             filterItems();
+        }
+
+        // Chức năng Sửa tên mục
+        function editItem(itemIndex) {
+            const item = state[currentCategoryIndex].items[itemIndex];
+            const newName = prompt("请输入新的项目名称 (Nhập tên mới cho dự án):", item.name);
+            
+            if (newName !== null) { // Nếu người dùng không bấm Cancel
+                const trimmedName = newName.trim();
+                if (trimmedName !== "") {
+                    item.name = trimmedName;
+                    saveData();
+                    renderDetail();
+                } else {
+                    alert("项目名称不能为空！(Tên không được để trống!)");
+                }
+            }
+        }
+
+        // Chức năng Xóa mục
+        function deleteItem(itemIndex) {
+            const item = state[currentCategoryIndex].items[itemIndex];
+            const isConfirmed = confirm(`您确定要删除 "${item.name}" 吗？\n(Bạn có chắc chắn muốn xóa mục "${item.name}" không?)`);
+            
+            if (isConfirmed) {
+                // Xóa phần tử khỏi mảng
+                state[currentCategoryIndex].items.splice(itemIndex, 1);
+                saveData();
+                renderDetail();
+            }
         }
 
         // Cập nhật số lượng (+ / -)
@@ -436,16 +495,16 @@
 
         // Chức năng Xóa toàn bộ số lượng đếm về 0
         function resetAllCounts() {
-            const confirmReset = confirm("您确定要将所有统计数据清零吗？");
+            const confirmReset = confirm("您确定要将所有统计数据清零吗？\n(Bạn có chắc chắn muốn đưa TẤT CẢ số liệu đếm về 0 không?)");
             if (confirmReset) {
                 state.forEach(category => {
                     category.items.forEach(item => {
-                        item.count = 0; // Set count về 0
+                        item.count = 0;
                     });
                 });
-                saveData(); // Lưu lại vào local storage
-                renderHome(); // Render lại trang chủ để cập nhật tổng số
-                alert("所有数据已清零！");
+                saveData(); 
+                renderHome(); 
+                alert("所有数据已清零！\n(Toàn bộ số liệu đã được đặt về 0 thành công!)");
             }
         }
 
