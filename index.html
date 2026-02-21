@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -162,6 +162,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
+            white-space: nowrap;
             transition: background 0.2s;
         }
 
@@ -201,12 +202,12 @@
         <div id="app-content"></div>
 
         <div class="export-section">
-            <button class="btn-export" onclick="exportToExcel()">📥 Lưu dữ liệu Excel</button>
+            <button class="btn-export" onclick="exportToExcel()">📥 导出 Excel 数据</button>
         </div>
     </div>
 
     <script>
-        // Cấu trúc dữ liệu trạng thái
+        // Cấu trúc dữ liệu
         const state = [
             { id: 0, title: "1. 资金不同步，协助回收", open: false, items: [] },
             { id: 1, title: "2. 会员反馈资金掉失/转移异常", open: false, items: [] },
@@ -256,8 +257,8 @@
                 const addGroup = document.createElement('div');
                 addGroup.className = 'add-item-group';
                 addGroup.innerHTML = `
-                    <input type="text" id="input-${catIndex}" placeholder="Nhập tên mục mới cần theo dõi...">
-                    <button class="btn-add" onclick="addNewItem(${catIndex})">Thêm</button>
+                    <input type="text" id="input-${catIndex}" placeholder="输入需要追踪的新项目名称...">
+                    <button class="btn-add" onclick="addNewItem(${catIndex})">添加</button>
                 `;
                 body.appendChild(addGroup);
 
@@ -270,7 +271,7 @@
         // Hàm cập nhật số lượng
         function updateCount(catIndex, itemIndex, change) {
             const item = state[catIndex].items[itemIndex];
-            if (item.count + change >= 0) { // Không cho phép số âm
+            if (item.count + change >= 0) {
                 item.count += change;
                 render();
             }
@@ -284,53 +285,52 @@
                 state[catIndex].items.push({ name: val, count: 0 });
                 render();
             } else {
-                alert("Vui lòng nhập tên mục!");
+                alert("请输入项目名称！");
             }
         }
 
-        // Hàm xuất dữ liệu ra file Excel
+        // Hàm xuất Excel
         function exportToExcel() {
             let exportData = [];
             
             state.forEach(category => {
                 if (category.items.length === 0) {
-                    // Nếu danh mục trống
                     exportData.push({
-                        "Phân loại (分类)": category.title,
-                        "Mục chi tiết (详细项目)": "Không có dữ liệu",
-                        "Số lượng (数量)": 0
+                        "分类": category.title,
+                        "详细项目": "暂无数据",
+                        "数量": 0
                     });
                 } else {
                     category.items.forEach(item => {
                         exportData.push({
-                            "Phân loại (分类)": category.title,
-                            "Mục chi tiết (详细项目)": item.name,
-                            "Số lượng (数量)": item.count
+                            "分类": category.title,
+                            "详细项目": item.name,
+                            "数量": item.count
                         });
                     });
                 }
             });
 
-            // Tạo worksheet từ mảng JSON
+            // Tạo worksheet
             const worksheet = XLSX.utils.json_to_sheet(exportData);
             
-            // Chỉnh lại chiều rộng cột cho đẹp
+            // Chỉnh độ rộng cột
             const wscols = [
                 {wch: 35}, // Phân loại
-                {wch: 40}, // Mục chi tiết
+                {wch: 40}, // Chi tiết
                 {wch: 15}  // Số lượng
             ];
             worksheet['!cols'] = wscols;
 
             // Tạo workbook
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Thống kê lỗi");
+            XLSX.utils.book_append_sheet(workbook, worksheet, "问题统计");
 
             // Xuất file
-            XLSX.writeFile(workbook, "Thong_Ke_Loi_Van_Hanh.xlsx");
+            XLSX.writeFile(workbook, "运营问题统计.xlsx");
         }
 
-        // Khởi chạy lần đầu
+        // Khởi chạy
         render();
     </script>
 </body>
