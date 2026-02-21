@@ -29,17 +29,16 @@
                         <body style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f7f6; font-family:sans-serif; margin:0;">
                             <div style="text-align:center; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
                                 <h1 style="color:#e74c3c; margin-bottom: 10px; font-size: 32px;">⛔ 访问被拒绝</h1>
-                                <h2 style="color:#e74c3c; margin-top: 0; font-size: 20px;">(Quyền truy cập bị từ chối)</h2>
                                 <p style="color:#333; font-size: 16px; margin-top: 20px;">
-                                    IP của bạn: <b style="color: #4a90e2;">${userIP}</b><br>
-                                    không nằm trong danh sách được cấp phép.
+                                    您的IP: <b style="color: #4a90e2;">${userIP}</b><br>
+                                    不在允许列表中
                                 </p>
                             </div>
                         </body>
                     `;
                 }
             })
-            .catch(error => console.error("Không thể kiểm tra IP", error));
+            .catch(error => console.error("无法检测 IP", error));
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
