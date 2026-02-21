@@ -32,65 +32,90 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            min-height: 400px;
         }
 
         h1 {
             text-align: center;
             color: var(--primary-color);
+            margin-top: 0;
             margin-bottom: 30px;
             font-size: 28px;
         }
 
-        .category-card {
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 15px;
-            overflow: hidden;
+        /* Ẩn hiện các màn hình */
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .category-header {
+        /* Thiết kế menu trang chủ */
+        .menu-card {
             background-color: #fafbfc;
-            padding: 15px 20px;
+            border: 1px solid var(--border-color);
+            padding: 18px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
             font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background 0.3s;
+            transition: all 0.2s;
         }
 
-        .category-header:hover {
+        .menu-card:hover {
+            background-color: #f1f3f5;
+            transform: translateX(5px);
+            border-color: var(--primary-color);
+        }
+
+        .menu-card::after {
+            content: '\276F'; /* Mũi tên chỉ sang phải */
+            color: #999;
+            font-size: 16px;
+        }
+
+        /* Nút quay lại trang chủ */
+        .btn-back {
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+
+        .btn-back:hover {
             background-color: #f1f3f5;
         }
 
-        .category-header::after {
-            content: '\25BC';
-            font-size: 14px;
-            transition: transform 0.3s;
+        .detail-title {
+            color: var(--primary-color);
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
         }
 
-        .category-card.active .category-header::after {
-            transform: rotate(180deg);
-        }
-
-        .category-body {
-            display: none;
-            padding: 20px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .category-card.active .category-body {
-            display: block;
-        }
-
+        /* Danh sách item */
         .item-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: #fdfdfd;
             border: 1px solid #eee;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border-radius: 6px;
             margin-bottom: 10px;
         }
@@ -107,8 +132,8 @@
         }
 
         .btn-count {
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border: none;
             border-radius: 50%;
             background-color: var(--primary-color);
@@ -121,17 +146,9 @@
             transition: background 0.2s;
         }
 
-        .btn-count:hover {
-            background-color: var(--btn-hover);
-        }
-
-        .btn-count.minus {
-            background-color: #e74c3c;
-        }
-
-        .btn-count.minus:hover {
-            background-color: #c0392b;
-        }
+        .btn-count:hover { background-color: var(--btn-hover); }
+        .btn-count.minus { background-color: #e74c3c; }
+        .btn-count.minus:hover { background-color: #c0392b; }
 
         .count-display {
             font-weight: bold;
@@ -143,36 +160,45 @@
         .add-item-group {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .add-item-group input {
             flex-grow: 1;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 15px;
         }
 
         .btn-add {
-            padding: 10px 20px;
+            padding: 10px 25px;
             background-color: #2ecc71;
             color: white;
             border: none;
             border-radius: 6px;
             cursor: pointer;
+            font-size: 15px;
             font-weight: 600;
             white-space: nowrap;
             transition: background 0.2s;
         }
 
-        .btn-add:hover {
-            background-color: #27ae60;
+        .btn-add:hover { background-color: #27ae60; }
+
+        .empty-msg {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
         }
 
+        /* Khu vực xuất file */
         .export-section {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--border-color);
         }
 
         .btn-export {
@@ -184,13 +210,14 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
             box-shadow: 0 4px 6px rgba(74, 144, 226, 0.3);
         }
 
         .btn-export:hover {
             background-color: var(--btn-hover);
             transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(74, 144, 226, 0.4);
         }
     </style>
 </head>
@@ -199,97 +226,153 @@
     <div class="container">
         <h1>运营问题反馈</h1>
         
-        <div id="app-content"></div>
+        <div id="home-view" class="view active">
+            <div id="menu-list">
+                </div>
 
-        <div class="export-section">
-            <button class="btn-export" onclick="exportToExcel()">📥 导出 Excel 数据</button>
+            <div class="export-section">
+                <button class="btn-export" onclick="exportToExcel()">📥 导出 Excel 数据</button>
+            </div>
+        </div>
+
+        <div id="detail-view" class="view">
+            <button class="btn-back" onclick="goBack()">🔙 返回</button>
+            <div id="detail-title" class="detail-title"></div>
+            
+            <div id="item-list">
+                </div>
+
+            <div class="add-item-group">
+                <input type="text" id="new-item-input" placeholder="输入需要追踪的新项目名称..." onkeypress="handleKeyPress(event)">
+                <button class="btn-add" onclick="addNewItem()">添加</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Cấu trúc dữ liệu
-        const state = [
-            { id: 0, title: "1. 资金不同步，协助回收", open: false, items: [] },
-            { id: 1, title: "2. 会员反馈资金掉失/转移异常", open: false, items: [] },
-            { id: 2, title: "3. 注单结算错误", open: false, items: [] },
-            { id: 3, title: "4. 注单未结算问题", open: false, items: [] }
+        // Dữ liệu mặc định
+        const defaultState = [
+            { id: 0, title: "1. 资金不同步，协助回收", items: [] },
+            { id: 1, title: "2. 会员反馈资金掉失/转移异常", items: [] },
+            { id: 2, title: "3. 注单结算错误", items: [] },
+            { id: 3, title: "4. 注单未结算问题", items: [] }
         ];
 
-        // Hàm vẽ giao diện
-        function render() {
-            const container = document.getElementById('app-content');
-            container.innerHTML = '';
+        let state = [];
+        let currentCategoryIndex = null;
 
-            state.forEach((category, catIndex) => {
-                const card = document.createElement('div');
-                card.className = `category-card ${category.open ? 'active' : ''}`;
-
-                // Header
-                const header = document.createElement('div');
-                header.className = 'category-header';
-                header.innerText = category.title;
-                header.onclick = () => {
-                    category.open = !category.open;
-                    render();
-                };
-
-                // Body
-                const body = document.createElement('div');
-                body.className = 'category-body';
-
-                // Danh sách các item bên trong
-                category.items.forEach((item, itemIndex) => {
-                    const itemRow = document.createElement('div');
-                    itemRow.className = 'item-row';
-                    
-                    itemRow.innerHTML = `
-                        <div class="item-name">${item.name}</div>
-                        <div class="counter-group">
-                            <button class="btn-count minus" onclick="updateCount(${catIndex}, ${itemIndex}, -1)">-</button>
-                            <span class="count-display">${item.count}</span>
-                            <button class="btn-count plus" onclick="updateCount(${catIndex}, ${itemIndex}, 1)">+</button>
-                        </div>
-                    `;
-                    body.appendChild(itemRow);
-                });
-
-                // Khu vực thêm mới item
-                const addGroup = document.createElement('div');
-                addGroup.className = 'add-item-group';
-                addGroup.innerHTML = `
-                    <input type="text" id="input-${catIndex}" placeholder="输入需要追踪的新项目名称...">
-                    <button class="btn-add" onclick="addNewItem(${catIndex})">添加</button>
-                `;
-                body.appendChild(addGroup);
-
-                card.appendChild(header);
-                card.appendChild(body);
-                container.appendChild(card);
-            });
-        }
-
-        // Hàm cập nhật số lượng
-        function updateCount(catIndex, itemIndex, change) {
-            const item = state[catIndex].items[itemIndex];
-            if (item.count + change >= 0) {
-                item.count += change;
-                render();
+        // Tải dữ liệu từ LocalStorage (để chống mất dữ liệu khi F5)
+        function loadData() {
+            const savedData = localStorage.getItem('feedbackData');
+            if (savedData) {
+                state = JSON.parse(savedData);
+            } else {
+                state = JSON.parse(JSON.stringify(defaultState));
             }
         }
 
-        // Hàm thêm mục mới
-        function addNewItem(catIndex) {
-            const input = document.getElementById(`input-${catIndex}`);
+        // Lưu dữ liệu vào LocalStorage
+        function saveData() {
+            localStorage.setItem('feedbackData', JSON.stringify(state));
+        }
+
+        // Vẽ màn hình trang chủ
+        function renderHome() {
+            const menuList = document.getElementById('menu-list');
+            menuList.innerHTML = '';
+
+            state.forEach((category, index) => {
+                const card = document.createElement('div');
+                card.className = 'menu-card';
+                card.innerHTML = `
+                    <span>${category.title}</span>
+                    <span style="font-size: 14px; color: #666; font-weight: normal;">
+                        (已记录: ${category.items.length} 项)
+                    </span>
+                `;
+                card.onclick = () => openCategory(index);
+                menuList.appendChild(card);
+            });
+        }
+
+        // Chuyển sang trang chi tiết
+        function openCategory(index) {
+            currentCategoryIndex = index;
+            document.getElementById('home-view').classList.remove('active');
+            document.getElementById('detail-view').classList.add('active');
+            renderDetail();
+        }
+
+        // Quay lại trang chủ
+        function goBack() {
+            currentCategoryIndex = null;
+            document.getElementById('detail-view').classList.remove('active');
+            document.getElementById('home-view').classList.add('active');
+            renderHome(); // Cập nhật lại số lượng mục ở trang chủ
+        }
+
+        // Vẽ màn hình chi tiết của 1 danh mục
+        function renderDetail() {
+            const category = state[currentCategoryIndex];
+            document.getElementById('detail-title').innerText = category.title;
+            
+            const itemList = document.getElementById('item-list');
+            itemList.innerHTML = '';
+
+            if (category.items.length === 0) {
+                itemList.innerHTML = '<div class="empty-msg">暂无项目，请在下方添加。</div>';
+            } else {
+                category.items.forEach((item, itemIndex) => {
+                    const row = document.createElement('div');
+                    row.className = 'item-row';
+                    row.innerHTML = `
+                        <div class="item-name">${item.name}</div>
+                        <div class="counter-group">
+                            <button class="btn-count minus" onclick="updateCount(${itemIndex}, -1)">-</button>
+                            <span class="count-display">${item.count}</span>
+                            <button class="btn-count plus" onclick="updateCount(${itemIndex}, 1)">+</button>
+                        </div>
+                    `;
+                    itemList.appendChild(row);
+                });
+            }
+
+            // Xóa input cũ sau khi render
+            document.getElementById('new-item-input').value = '';
+            document.getElementById('new-item-input').focus();
+        }
+
+        // Cập nhật số lượng (+ / -)
+        function updateCount(itemIndex, change) {
+            const item = state[currentCategoryIndex].items[itemIndex];
+            if (item.count + change >= 0) {
+                item.count += change;
+                saveData(); // Lưu ngay vào bộ nhớ
+                renderDetail();
+            }
+        }
+
+        // Thêm mục con mới
+        function addNewItem() {
+            const input = document.getElementById('new-item-input');
             const val = input.value.trim();
             if (val !== "") {
-                state[catIndex].items.push({ name: val, count: 0 });
-                render();
+                state[currentCategoryIndex].items.push({ name: val, count: 0 });
+                saveData(); // Lưu ngay vào bộ nhớ
+                renderDetail();
             } else {
                 alert("请输入项目名称！");
             }
         }
 
-        // Hàm xuất Excel
+        // Hỗ trợ ấn Enter để thêm
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                addNewItem();
+            }
+        }
+
+        // Xuất file Excel
         function exportToExcel() {
             let exportData = [];
             
@@ -311,27 +394,22 @@
                 }
             });
 
-            // Tạo worksheet
             const worksheet = XLSX.utils.json_to_sheet(exportData);
-            
-            // Chỉnh độ rộng cột
-            const wscols = [
-                {wch: 35}, // Phân loại
-                {wch: 40}, // Chi tiết
-                {wch: 15}  // Số lượng
-            ];
+            const wscols = [{wch: 35}, {wch: 40}, {wch: 15}];
             worksheet['!cols'] = wscols;
 
-            // Tạo workbook
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "问题统计");
 
-            // Xuất file
-            XLSX.writeFile(workbook, "运营问题统计.xlsx");
+            // Tạo tên file kèm theo ngày giờ
+            const date = new Date();
+            const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+            XLSX.writeFile(workbook, `运营问题统计_${dateString}.xlsx`);
         }
 
-        // Khởi chạy
-        render();
+        // Khởi chạy ứng dụng
+        loadData();
+        renderHome();
     </script>
 </body>
 </html>
