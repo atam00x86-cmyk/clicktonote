@@ -3,190 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>运营问题反馈</title>
+    <title>运营反馈系统 Pro</title>
     
     <script>
-    
-        const ALLOWED_IPS = [
-            '180.232.127.105', 
-            '8.217.98.79',
-            '8.217.80.232'
-            // Thêm các IP khác vào đây...
-        ];
+        // --- 🛑 DANH SÁCH IP CHO PHÉP ---
+        const ALLOWED_IPS = ['180.232.127.105', '8.217.98.79', '8.217.80.232'];
 
-        // Hàm kiểm tra IP ngay khi bắt đầu tải trang
         (function checkIP() {
             fetch('https://api.ipify.org?format=json')
-                .then(response => response.json())
+                .then(res => res.json())
                 .then(data => {
-                    const userIP = data.ip;
-                    if (!ALLOWED_IPS.includes(userIP)) {
+                    if (!ALLOWED_IPS.includes(data.ip)) {
                         document.documentElement.innerHTML = `
-                            <head><title>Access Denied</title></head>
-                            <body style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f7f6; font-family:sans-serif; margin:0;">
-                                <div style="text-align:center; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
-                                    <h1 style="color:#e74c3c; margin-bottom: 10px;">⛔ 访问被拒绝</h1>
-                                    <p style="color:#333;">您的IP: <b style="color: #4a90e2;">${userIP}</b><br>不在列表中</p>
+                            <body style="background:#f8fafc;display:flex;justify-content:center;align-items:center;height:100vh;font-family:system-ui,-apple-system,sans-serif;margin:0;">
+                                <div style="text-align:center;padding:50px;background:#fff;border-radius:32px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.08);max-width:400px;">
+                                    <div style="font-size:64px;margin-bottom:20px;">🔒</div>
+                                    <h1 style="color:#1e293b;margin:0;font-size:24px;font-weight:800;">访问受限</h1>
+                                    <p style="color:#64748b;margin:15px 0;line-height:1.6;">您的 IP <b style="color:#6366f1;">${data.ip}</b> 未获得系统授权，请联系管理员开放权限。</p>
                                 </div>
-                            </body>
-                        `;
+                            </body>`;
                     }
-                })
-                .catch(error => console.error("IP Check Error:", error));
+                });
         })();
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --primary-color: #4a90e2;
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --text-main: #333333;
-            --border-color: #e1e4e8;
-            --btn-hover: #357ab8;
+            --primary: #6366f1;
+            --primary-soft: #eef2ff;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border: #f1f5f9;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -4px rgba(0, 0, 0, 0.02);
         }
 
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
             color: var(--text-main);
-            margin: 0; padding: 20px;
+            margin: 0; padding: 40px 20px;
             display: flex; justify-content: center;
         }
 
-        .container {
-            width: 100%; max-width: 800px;
-            background: var(--card-bg);
-            padding: 30px; border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
-            min-height: 400px;
-        }
+        .container { width: 100%; max-width: 800px; animation: fadeIn 0.5s ease-out; }
 
-        h1 { text-align: center; color: var(--primary-color); margin-top: 0; margin-bottom: 30px; font-size: 28px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        header { text-align: center; margin-bottom: 40px; }
+        header h1 { font-size: 32px; font-weight: 800; margin: 0; color: var(--text-main); letter-spacing: -1px; }
+        header p { color: var(--text-sub); margin-top: 8px; font-size: 15px; }
+
+        /* Card Style */
+        .glass-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--card);
+        }
 
         .view { display: none; }
-        .view.active { display: block; animation: fadeIn 0.3s ease; }
+        .view.active { display: block; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Menu Items */
+        .menu-grid { display: grid; gap: 16px; }
+        .menu-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            border-radius: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-decoration: none;
+        }
+        .menu-item:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 20px -10px rgba(99, 102, 241, 0.15);
+        }
+        .menu-item span:first-child { font-weight: 600; font-size: 17px; }
+        .count-badge {
+            background: var(--primary-soft);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
         }
 
-        .menu-card {
-            background-color: #fafbfc;
-            border: 1px solid var(--border-color);
-            padding: 18px 20px; border-radius: 8px;
-            margin-bottom: 15px; font-size: 18px; font-weight: 600;
-            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s;
-        }
-
-        .menu-card:hover { background-color: #f1f3f5; transform: translateX(5px); border-color: var(--primary-color); }
-
+        /* Detail View */
         .btn-back {
-            background-color: transparent; border: 1px solid var(--border-color);
-            padding: 8px 15px; border-radius: 6px; cursor: pointer;
-            font-size: 14px; font-weight: bold; margin-bottom: 20px;
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--primary-soft); color: var(--primary);
+            border: none; padding: 10px 18px; border-radius: 12px;
+            font-weight: 600; cursor: pointer; margin-bottom: 24px;
         }
-
-        .search-group input {
-            width: 100%; padding: 10px 15px;
-            border: 1px solid var(--border-color); border-radius: 6px;
-            box-sizing: border-box; margin-bottom: 15px;
-        }
+        .btn-back:hover { background: var(--primary); color: white; }
 
         .item-row {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #fdfdfd; border: 1px solid #eee;
-            padding: 12px 15px; border-radius: 6px; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 16px;
+            padding: 16px; border-bottom: 1px solid var(--border);
+        }
+        .item-row:last-child { border: none; }
+        .item-info { flex-grow: 1; }
+        .item-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+        
+        /* Counter Controls */
+        .counter-box {
+            display: flex; align-items: center;
+            background: var(--bg);
+            padding: 6px; border-radius: 14px; gap: 12px;
+        }
+        .btn-ctrl {
+            width: 34px; height: 34px; border-radius: 10px; border: none;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-minus { background: #fee2e2; color: var(--danger); }
+        .btn-plus { background: var(--primary); color: white; }
+        .val-display { font-weight: 800; min-width: 25px; text-align: center; font-size: 17px; }
+
+        /* Actions */
+        .input-group {
+            display: flex; gap: 12px; margin-top: 30px;
+            background: var(--bg); padding: 8px; border-radius: 16px;
+        }
+        .input-group input {
+            flex-grow: 1; border: none; background: transparent;
+            padding: 10px 15px; font-family: inherit; font-size: 15px; outline: none;
+        }
+        .btn-add {
+            background: var(--text-main); color: white; border: none;
+            padding: 10px 24px; border-radius: 12px; font-weight: 600; cursor: pointer;
         }
 
-        .item-name { flex-grow: 1; font-size: 16px; word-break: break-all; padding-right: 10px; }
-
-        .btn-icon { background: transparent; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; padding: 4px 6px; }
-
-        .counter-group { display: flex; align-items: center; gap: 15px; }
-
-        .btn-count {
-            width: 32px; height: 32px; border: none; border-radius: 50%;
-            background-color: var(--primary-color); color: white; cursor: pointer;
+        .footer-actions {
+            display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-top: 40px;
         }
-
-        .count-display { font-weight: bold; min-width: 30px; text-align: center; }
-
-        .add-item-group { display: flex; gap: 10px; margin-top: 20px; }
-
-        .add-item-group input { flex-grow: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; }
-
-        .btn-add { padding: 10px 25px; background-color: #2ecc71; color: white; border: none; border-radius: 6px; cursor: pointer; }
-
-        .action-section {
-            display: flex; justify-content: center; gap: 15px;
-            margin-top: 40px; padding-top: 20px; border-top: 1px dashed var(--border-color);
+        .btn-footer {
+            padding: 16px; border-radius: 18px; border: none;
+            font-weight: 700; cursor: pointer; font-size: 16px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
+        .btn-reset { background: #fff; border: 2px solid #fee2e2; color: var(--danger); }
+        .btn-reset:hover { background: #fee2e2; }
+        .btn-export { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.3); }
+        .btn-export:hover { background: var(--primary-hover); transform: translateY(-2px); }
 
-        .btn-export, .btn-clear {
-            padding: 12px 25px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+        .search-box {
+            width: 100%; border: 1px solid var(--border); border-radius: 14px;
+            padding: 12px 18px; margin-bottom: 20px; outline: none; font-family: inherit;
         }
-
-        .btn-export { background-color: var(--primary-color); }
-        .btn-clear { background-color: #e74c3c; }
+        .search-box:focus { border-color: var(--primary); }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>运营问题反馈</h1>
-        
-        <div id="home-view" class="view active">
-            <div id="menu-list"></div>
-            <div class="action-section">
-                <button class="btn-clear" onclick="resetAllCounts()">🗑️ </button>
-                <button class="btn-export" onclick="exportToExcel()">📥 导出</button>
-            </div>
-        </div>
+        <header>
+            <h1>运营反馈系统</h1>
+            <p id="current-date-text"></p>
+        </header>
 
-        <div id="detail-view" class="view">
-            <button class="btn-back" onclick="goBack()">🔙 返回</button>
-            <div id="detail-title" style="font-size: 20px; font-weight: bold; color: var(--primary-color); margin-bottom: 15px;"></div>
-            <div class="search-group"><input type="text" id="search-input" placeholder="🔍 搜索" oninput="filterItems()"></div>
-            <div id="item-list"></div>
-            <div class="add-item-group">
-                <input type="text" id="new-item-input" placeholder="输入新项目名称..." onkeypress="handleKeyPress(event)">
-                <button class="btn-add" onclick="addNewItem()">添加</button>
+        <div class="glass-card">
+            <div id="home-view" class="view active">
+                <div class="menu-grid" id="menu-list"></div>
+                
+                <div class="footer-actions">
+                    <button class="btn-footer btn-reset" onclick="resetAllCounts()">🗑️ 清零</button>
+                    <button class="btn-footer btn-export" onclick="exportToExcel()">📥 导出 Excel</button>
+                </div>
+            </div>
+
+            <div id="detail-view" class="view">
+                <button class="btn-back" onclick="goBack()">← 返回主页</button>
+                <div id="detail-header">
+                    <h2 id="detail-title" style="margin:0 0 20px 0; font-size: 24px;"></h2>
+                </div>
+                <input type="text" class="search-box" id="search-input" placeholder="🔍 搜索项目..." oninput="filterItems()">
+                <div id="item-list"></div>
+                
+                <div class="input-group">
+                    <input type="text" id="new-item-input" placeholder="输入新反馈项目名称..." onkeypress="if(event.key==='Enter')addNewItem()">
+                    <button class="btn-add" onclick="addNewItem()">添加</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const defaultState = [
-            { id: 0, title: "1. 资金不同步，协助回收", items: [] },
-            { id: 1, title: "2. 会员反馈资金掉失/转移异常", items: [] },
-            { id: 2, title: "3. 注单结算错误", items: [] },
-            { id: 3, title: "4. 注单未结算问题", items: [] }
+            { title: "1. 资金不同步，协助回收", items: [] },
+            { title: "2. 会员反馈资金掉失/转移异常", items: [] },
+            { title: "3. 注单结算错误", items: [] },
+            { title: "4. 注单未结算问题", items: [] }
         ];
 
         let state = [];
         let currentCategoryIndex = null;
 
+        // Hiển thị ngày tháng trên Header
+        const now = new Date();
+        document.getElementById('current-date-text').innerText = `今天是 ${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+
         function loadData() {
-            const saved = localStorage.getItem('feedbackData');
+            const saved = localStorage.getItem('feedbackData_v2');
             state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultState));
         }
 
-        function saveData() { localStorage.setItem('feedbackData', JSON.stringify(state)); }
+        function saveData() { localStorage.setItem('feedbackData_v2', JSON.stringify(state)); }
 
         function renderHome() {
-            const menuList = document.getElementById('menu-list');
-            menuList.innerHTML = '';
+            const list = document.getElementById('menu-list');
+            list.innerHTML = '';
             state.forEach((cat, idx) => {
-                const total = cat.items.reduce((sum, item) => sum + item.count, 0);
-                const card = document.createElement('div');
-                card.className = 'menu-card';
-                card.innerHTML = `<span>${cat.title}</span><span style="font-size:14px;color:#666;font-weight:normal;">(${cat.items.length}项 | 总计:${total})</span>`;
-                card.onclick = () => openCategory(idx);
-                menuList.appendChild(card);
+                const total = cat.items.reduce((sum, i) => sum + i.count, 0);
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.innerHTML = `<span>${cat.title}</span><span class="count-badge">${total}</span>`;
+                div.onclick = () => openCategory(idx);
+                list.appendChild(div);
             });
         }
 
@@ -208,73 +255,104 @@
             const cat = state[currentCategoryIndex];
             document.getElementById('detail-title').innerText = cat.title;
             const list = document.getElementById('item-list');
-            list.innerHTML = cat.items.length ? '' : '<div style="text-align:center;color:#999;padding:20px;">暂无项目</div>';
+            list.innerHTML = cat.items.length ? '' : '<p style="text-align:center; color:#94a3b8; padding:20px;">暂无数据，请添加新项目</p>';
+            
             cat.items.forEach((item, idx) => {
-                const row = document.createElement('div');
-                row.className = 'item-row';
-                row.innerHTML = `
-                    <div class="item-name">${item.name}</div>
-                    <div style="display:flex; gap:8px; margin-right:15px;">
-                        <button class="btn-icon" onclick="editItem(${idx})">✏️</button>
-                        <button class="btn-icon" onclick="deleteItem(${idx})">🗑️</button>
+                const div = document.createElement('div');
+                div.className = 'item-row';
+                div.innerHTML = `
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div style="font-size:12px; color:#94a3b8;">
+                            <span style="cursor:pointer;" onclick="editItem(${idx})">✏️ 编辑</span> | 
+                            <span style="cursor:pointer;" onclick="deleteItem(${idx})">🗑️ 删除</span>
+                        </div>
                     </div>
-                    <div class="counter-group">
-                        <button class="btn-count" style="background-color:#e74c3c;" onclick="updateCount(${idx}, -1)">-</button>
-                        <span class="count-display">${item.count}</span>
-                        <button class="btn-count" onclick="updateCount(${idx}, 1)">+</button>
+                    <div class="counter-box">
+                        <button class="btn-ctrl btn-minus" onclick="updateCount(${idx}, -1)">-</button>
+                        <span class="val-display">${item.count}</span>
+                        <button class="btn-ctrl btn-plus" onclick="updateCount(${idx}, 1)">+</button>
                     </div>`;
-                list.appendChild(row);
+                list.appendChild(div);
             });
         }
 
-        function updateCount(idx, change) {
+        function updateCount(idx, chg) {
             const item = state[currentCategoryIndex].items[idx];
-            if (item.count + change >= 0) { item.count += change; saveData(); renderDetail(); }
+            if (item.count + chg >= 0) {
+                item.count += chg;
+                saveData(); renderDetail();
+            }
         }
 
         function addNewItem() {
             const input = document.getElementById('new-item-input');
-            if (input.value.trim()) {
-                state[currentCategoryIndex].items.push({ name: input.value.trim(), count: 0 });
+            const val = input.value.trim();
+            if (val) {
+                state[currentCategoryIndex].items.push({ name: val, count: 0 });
                 saveData(); renderDetail(); input.value = '';
             }
         }
 
         function editItem(idx) {
-            const n = prompt("新名称:", state[currentCategoryIndex].items[idx].name);
+            const n = prompt("修改项目名称:", state[currentCategoryIndex].items[idx].name);
             if (n) { state[currentCategoryIndex].items[idx].name = n; saveData(); renderDetail(); }
         }
 
         function deleteItem(idx) {
-            if (confirm("确定删除？")) { state[currentCategoryIndex].items.splice(idx, 1); saveData(); renderDetail(); }
+            if (confirm("确定要删除此项吗？")) {
+                state[currentCategoryIndex].items.splice(idx, 1);
+                saveData(); renderDetail();
+            }
         }
 
         function resetAllCounts() {
-            if (confirm("确定要全部清零吗？")) {
+            if (confirm("⚠️ 注意：这将把所有统计数值重置为 0，确定吗？")) {
                 state.forEach(c => c.items.forEach(i => i.count = 0));
                 saveData(); renderHome();
             }
         }
 
         function filterItems() {
-            const t = document.getElementById('search-input').value.toLowerCase();
-            document.querySelectorAll('.item-row').forEach(r => {
-                r.style.display = r.querySelector('.item-name').innerText.toLowerCase().includes(t) ? 'flex' : 'none';
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('.item-row');
+            rows.forEach(row => {
+                const text = row.querySelector('.item-name').innerText.toLowerCase();
+                row.style.display = text.includes(query) ? 'flex' : 'none';
             });
         }
 
-        function handleKeyPress(e) { if (e.key === 'Enter') addNewItem(); }
-
+        // --- 📥 HÀM XUẤT EXCEL TỐI ƯU ---
         function exportToExcel() {
-            let d = [];
-            state.forEach(c => c.items.forEach(i => d.push({"分类": c.title, "项目": i.name, "数量": i.count})));
-            const ws = XLSX.utils.json_to_sheet(d);
+            const exportData = [];
+            state.forEach(cat => {
+                cat.items.forEach(item => {
+                    if (item.count > 0) {
+                        exportData.push({
+                            "反馈分类": cat.title,
+                            "具体项目": item.name,
+                            "统计数量": item.count
+                        });
+                    }
+                });
+            });
+
+            if (exportData.length === 0) return alert("当前没有统计数据（数值均为0）");
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Stats");
-            XLSX.writeFile(wb, `Feedback_${new Date().getTime()}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "统计结果");
+
+            // Xử lý tên file: 运营问题统计_YYYYMMDD
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const fileName = `运营问题统计_${year}${month}${day}.xlsx`;
+
+            XLSX.writeFile(wb, fileName);
         }
 
-        // Khởi tạo app
         loadData();
         renderHome();
     </script>
