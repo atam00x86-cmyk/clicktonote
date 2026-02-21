@@ -19,8 +19,15 @@
         .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; font-size: 13px; font-weight: 700; color: var(--text-sub); }
         .dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; background: #10b981; box-shadow: 0 0 10px #10b981; }
         .view { display: none; } .view.active { display: block; }
-        .menu-item { background: #fff; border: 1px solid var(--border); padding: 26px; border-radius: 24px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .menu-item:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.2); }
+        
+        /* Menu Item Styles */
+        .menu-item { background: #fff; border: 1px solid var(--border); padding: 20px 26px; border-radius: 24px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: relative; }
+        .menu-item:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.1); }
+        .menu-content { flex: 1; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-right: 15px; }
+        .menu-actions { display: flex; gap: 8px; }
+        .btn-action { background: none; border: none; cursor: pointer; padding: 5px; font-size: 16px; opacity: 0.5; }
+        .btn-action:hover { opacity: 1; }
+
         .count-badge { background: var(--primary-soft); color: var(--primary); padding: 6px 16px; border-radius: 14px; font-weight: 800; font-size: 15px; }
         .btn-back { background: #f1f5f9; border: none; padding: 12px 20px; border-radius: 14px; font-weight: 700; cursor: pointer; margin-bottom: 25px; color: var(--text-sub); }
         .search-box { width: 100%; padding: 16px 20px; border-radius: 18px; border: 1px solid var(--border); background: #f8fafc; font-family: inherit; font-size: 15px; outline: none; margin-bottom: 20px; }
@@ -31,7 +38,12 @@
         .btn-ctrl { width: 38px; height: 38px; border-radius: 12px; border: none; font-size: 22px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-minus { background: #fee2e2; color: var(--danger); } .btn-plus { background: var(--primary); color: white; }
         .val-display { font-weight: 800; min-width: 32px; text-align: center; font-size: 19px; }
+        
         .bulk-area { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; padding: 20px; margin-top: 30px; }
+        .add-cat-area { margin-bottom: 25px; display: flex; gap: 10px; }
+        .input-minimal { flex: 1; padding: 14px 20px; border-radius: 16px; border: 1px solid var(--border); outline: none; }
+        .btn-add-cat { background: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 16px; font-weight: 600; cursor: pointer; }
+
         textarea { width: 100%; border: none; background: transparent; min-height: 90px; outline: none; font-family: inherit; font-size: 15px; resize: none; }
         .btn-confirm { width: 100%; background: var(--text); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 700; cursor: pointer; margin-top: 12px; }
         .footer-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-top: 35px; border-top: 1px solid var(--border); padding-top: 25px; }
@@ -53,29 +65,39 @@
     </div>
     <div class="glass-card">
         <div id="home-view" class="view active">
-            <h1 style="margin:0 0 35px 0; font-weight:800; font-size:32px; letter-spacing:-1px;">ZH 运营问题反馈</h1>
+            <h1 style="margin:0 0 10px 0; font-weight:800; font-size:32px; letter-spacing:-1px;">ZH 运营问题反馈</h1>
+            <p style="color:var(--text-sub); margin-bottom: 30px; font-size: 14px;">管理反馈分类及项目数量</p>
+            
+            <div class="add-cat-area">
+                <input type="text" id="new-cat-input" class="input-minimal" placeholder="输入新分类名称...">
+                <button class="btn-add-cat" onclick="addCategory()">+ 添加</button>
+            </div>
+
             <div id="menu-list"></div>
+            
             <div class="footer-grid">
                 <button class="btn-footer btn-reset" onclick="resetAll()">全部清零</button>
                 <button class="btn-footer btn-export" onclick="exportData()">📥 导出 </button>
             </div>
         </div>
+
         <div id="detail-view" class="view">
             <button class="btn-back" onclick="showHome()">← 返回主页</button>
             <h2 id="detail-title" style="margin-bottom:22px; font-weight:800; font-size:24px;"></h2>
-            <input type="text" id="search-box" class="search-box" placeholder="🔍 搜索项目..." oninput="searchItems()">
+            <input type="text" id="search-box" class="search-box" placeholder="🔍 搜索 " oninput="searchItems()">
             <div class="item-list-container" id="item-list"></div>
             <div class="bulk-area">
                 <div style="font-size:13px; color:var(--text-sub); font-weight:800; margin-bottom:10px;">
                 <textarea id="bulk-input" placeholder="请粘贴项目列表..."></textarea>
-                <button class="btn-confirm" onclick="processBulk()">确认添加</button>
+                <button class="btn-confirm" onclick="processBulk()">确认添加项目</button>
             </div>
         </div>
     </div>
 </div>
+
 <script>
-    // --- 🛑 THAY BẰNG WEB APP URL ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbw8NDO__1oLxdHsE5L-1_bE_adRrn2j1dhDalFNvhgiQyP3C29eljVXkxzeIGBdGnUO/exec'; 
+    // --- 🛑 THAY BẰNG WEB APP URL CỦA BẠN ---
+    const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AY5xjrTL_46seYtdJTOGcUja7rsboqG2yCMvrXHFOOPuGnQ1d-K_wSaThkYIaQNB577OGLsTTUAzrCSMPsR7mMMfL9XoXRnQKMXeo0JRlcyEvNnc81AM3RNLdM9sHpavb8LyaxRgVNLr5F7Vfsznt-xIc6Tt_Fo-I1qS0i5k19Z4Is5wyLSRiv1ZZ_-8hTGs3utejL8DlOaMLg6Jnz84pCechp4hbmfTnfar5w2I40vXVwxgKQxpiUG6sq_L3AtidgOiC5JD1U9Ltf5bpFXGstPgE5Bg-FkFEw&lib=MbwNOH6m7r4XJXuVhPde4jE0LTOfyky5F'; 
 
     let state = []; let activeIdx = null; let debounceTimer = null;
     const d = new Date(); document.getElementById('date-label').innerText = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
@@ -95,49 +117,109 @@
                     <h1 style="color:var(--danger); margin:0; font-size:24px;">⛔ 访问被拒绝</h1>
                     <p style="color:var(--text-sub); margin:15px 0;">您的 IP 不在允许列表中</p>
                     <div class="ip-box">${userIP}</div>
-                    <p style="font-size:12px; color:var(--text-sub);">
                     <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; border-radius:12px; border:1px solid var(--border); cursor:pointer; font-weight:700;">🔄 刷新页面</button>
                 `;
                 document.querySelector('.loader').style.display = 'none'; return;
             }
             state = cloudRes.db.length ? cloudRes.db : [
-                { title: "1. 资金不同步，协助回收", items: [] }, { title: "2. 会员反馈资金掉失/转移异常", items: [] },
-                { title: "3. 注单结算错误", items: [] }, { title: "4. 注单未结算问题", items: [] }
+                { title: "1. 资金不同步", items: [] }, { title: "2. 会员反馈异常", items: [] }
             ];
-            document.getElementById('auth-overlay').style.display = 'none'; renderHome();
-        } catch (e) { document.getElementById('auth-msg').innerText = "❌ 数据库连接失败"; }
+            document.getElementById('auth-overlay').style.display = 'none'; 
+            renderHome();
+        } catch (e) { 
+            document.getElementById('auth-msg').innerText = "❌ 数据库连接失败"; 
+        }
     }
 
     function syncCloud() {
         document.getElementById('sync-label').innerText = "⏳ 正在保存...";
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
-            try { await fetch(API_URL, { method: 'POST', body: JSON.stringify(state) }); document.getElementById('sync-label').innerText = "✅ 已同步"; }
+            try { 
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify(state) }); 
+                document.getElementById('sync-label').innerText = "✅ 已同步"; 
+            }
             catch (e) { document.getElementById('sync-label').innerText = "❌ 同步失败"; }
         }, 1000);
+    }
+
+    // --- CATEGORY ACTIONS ---
+    function addCategory() {
+        const input = document.getElementById('new-cat-input');
+        const title = input.value.trim();
+        if (title) {
+            state.push({ title: title, items: [] });
+            input.value = '';
+            renderHome();
+            syncCloud();
+        }
+    }
+
+    function editCategory(i, event) {
+        event.stopPropagation();
+        const newTitle = prompt("修改分类名称:", state[i].title);
+        if (newTitle && newTitle.trim() !== "") {
+            state[i].title = newTitle.trim();
+            renderHome();
+            syncCloud();
+        }
+    }
+
+    function deleteCategory(i, event) {
+        event.stopPropagation();
+        if (confirm(`确定要删除分类 "${state[i].title}" 及其所有数据吗？`)) {
+            state.splice(i, 1);
+            renderHome();
+            syncCloud();
+        }
     }
 
     function renderHome() {
         const list = document.getElementById('menu-list'); list.innerHTML = '';
         state.forEach((cat, i) => {
             const total = cat.items.reduce((s, item) => s + item.count, 0);
-            const div = document.createElement('div'); div.className = 'menu-item';
-            div.innerHTML = `<span>${cat.title}</span><span class="count-badge">${total}</span>`;
-            div.onclick = () => showDetail(i); list.appendChild(div);
+            const div = document.createElement('div'); 
+            div.className = 'menu-item';
+            div.innerHTML = `
+                <div class="menu-content" onclick="showDetail(${i})">
+                    <span style="font-weight:600">${cat.title}</span>
+                    <span class="count-badge">${total}</span>
+                </div>
+                <div class="menu-actions">
+                    <button class="btn-action" onclick="editCategory(${i}, event)" title="编辑">✏️</button>
+                    <button class="btn-action" onclick="deleteCategory(${i}, event)" title="删除">🗑️</button>
+                </div>
+            `;
+            list.appendChild(div);
         });
     }
 
-    function showDetail(i) { activeIdx = i; document.getElementById('home-view').classList.remove('active'); document.getElementById('detail-view').classList.add('active'); renderDetail(); }
-    function showHome() { document.getElementById('detail-view').classList.remove('active'); document.getElementById('home-view').classList.add('active'); renderHome(); }
+    function showDetail(i) { 
+        activeIdx = i; 
+        document.getElementById('home-view').classList.remove('active'); 
+        document.getElementById('detail-view').classList.add('active'); 
+        renderDetail(); 
+    }
+    
+    function showHome() { 
+        document.getElementById('detail-view').classList.remove('active'); 
+        document.getElementById('home-view').classList.add('active'); 
+        renderHome(); 
+    }
 
     function renderDetail() {
         const list = document.getElementById('item-list'); list.innerHTML = '';
+        document.getElementById('detail-title').innerText = state[activeIdx].title;
+        
         state[activeIdx].items.forEach((item, i) => {
             const row = document.createElement('div'); row.className = 'item-row'; row.setAttribute('data-name', item.name);
             row.innerHTML = `
                 <div class="item-info">
                     <div class="item-name">${item.name}</div>
-                    <div style="font-size:12px; color:var(--text-sub); margin-top:5px;"><span style="cursor:pointer" onclick="editItem(${i})">✏️ 编辑</span> | <span style="cursor:pointer" onclick="deleteItem(${i})">🗑️ 删除</span></div>
+                    <div style="font-size:12px; color:var(--text-sub); margin-top:5px;">
+                        <span style="cursor:pointer" onclick="editItem(${i})">✏️ 编辑</span> | 
+                        <span style="cursor:pointer; color:var(--danger)" onclick="deleteItem(${i})">🗑️ 删除</span>
+                    </div>
                 </div>
                 <div class="counter-box">
                     <button class="btn-ctrl btn-minus" onclick="changeCount(${i},-1)">-</button>
@@ -146,31 +228,70 @@
                 </div>`;
             list.appendChild(row);
         });
-        document.getElementById('detail-title').innerText = state[activeIdx].title;
     }
 
-    function changeCount(i, v) { if (state[activeIdx].items[i].count + v >= 0) { state[activeIdx].items[i].count += v; renderDetail(); syncCloud(); } }
+    // --- ITEM ACTIONS ---
+    function changeCount(i, v) { 
+        if (state[activeIdx].items[i].count + v >= 0) { 
+            state[activeIdx].items[i].count += v; 
+            renderDetail(); 
+            syncCloud(); 
+        } 
+    }
+    
     function processBulk() {
         const input = document.getElementById('bulk-input');
         input.value.split('\n').forEach(line => {
-            const name = line.trim(); if (name && !state[activeIdx].items.some(x => x.name === name)) state[activeIdx].items.push({ name: name, count: 0 });
+            const name = line.trim(); 
+            if (name && !state[activeIdx].items.some(x => x.name === name)) {
+                state[activeIdx].items.push({ name: name, count: 0 });
+            }
         });
         input.value = ''; renderDetail(); syncCloud();
     }
-    function editItem(i) { const n = prompt("修改名称:", state[activeIdx].items[i].name); if(n) { state[activeIdx].items[i].name = n; renderDetail(); syncCloud(); } }
-    function deleteItem(i) { if(confirm("确定删除?")) { state[activeIdx].items.splice(i,1); renderDetail(); syncCloud(); } }
-    function resetAll() { if(confirm("⚠️ 全部清零数值?")) { state.forEach(c => c.items.forEach(i => i.count = 0)); renderHome(); syncCloud(); } }
+    
+    function editItem(i) { 
+        const n = prompt("修改项目名称:", state[activeIdx].items[i].name); 
+        if(n) { state[activeIdx].items[i].name = n; renderDetail(); syncCloud(); } 
+    }
+    
+    function deleteItem(i) { 
+        if(confirm("确定删除该项目?")) { 
+            state[activeIdx].items.splice(i,1); 
+            renderDetail(); 
+            syncCloud(); 
+        } 
+    }
+
+    function resetAll() { 
+        if(confirm("⚠️ 确定要清零所有项目的数值吗？(分类和项目名将保留)")) { 
+            state.forEach(c => c.items.forEach(i => i.count = 0)); 
+            renderHome(); 
+            syncCloud(); 
+        } 
+    }
+
     function searchItems() {
         const k = document.getElementById('search-box').value.toLowerCase();
-        document.querySelectorAll('.item-row').forEach(r => r.style.display = r.getAttribute('data-name').toLowerCase().includes(k) ? 'flex' : 'none');
+        document.querySelectorAll('.item-row').forEach(r => {
+            r.style.display = r.getAttribute('data-name').toLowerCase().includes(k) ? 'flex' : 'none';
+        });
     }
+
     function exportData() {
-        let d = []; state.forEach(c => c.items.forEach(i => { if(i.count > 0) d.push({"分类": c.title, "项目": i.name, "数量": i.count}); }));
+        let d = []; 
+        state.forEach(c => c.items.forEach(i => { 
+            if(i.count > 0) d.push({"分类": c.title, "项目": i.name, "数量": i.count}); 
+        }));
         if(d.length === 0) return alert("无可导出数据");
-        const ws = XLSX.utils.json_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data");
-        const now = new Date(); const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+        const ws = XLSX.utils.json_to_sheet(d); 
+        const wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        const now = new Date(); 
+        const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
         XLSX.writeFile(wb, `运营问题统计_${dateStr}.xlsx`);
     }
+
     init();
 </script>
 </body>
