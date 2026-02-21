@@ -4,6 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>运营问题反馈</title>
+    
+    <script>
+        // Danh sách các IP được phép truy cập. 
+        // 🛑 THAY BẰNG IP CỦA BẠN (HOẶC IP CỦA VPN) VÀO ĐÂY!
+        const ALLOWED_IPS = [
+            '180.232.127.105', // Ví dụ IP 1
+            '14.232.100.12'
+        ];
+
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                const userIP = data.ip;
+                // Nếu IP của người dùng không nằm trong danh sách
+                if (!ALLOWED_IPS.includes(userIP)) {
+                    // Xóa trắng web và hiện thông báo lỗi
+                    document.documentElement.innerHTML = `
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Access Denied</title>
+                        </head>
+                        <body style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f4f7f6; font-family:sans-serif; margin:0;">
+                            <div style="text-align:center; padding: 30px; background: white; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
+                                <h1 style="color:#e74c3c; margin-bottom: 10px; font-size: 32px;">⛔ 访问被拒绝</h1>
+                                <h2 style="color:#e74c3c; margin-top: 0; font-size: 20px;">(Quyền truy cập bị từ chối)</h2>
+                                <p style="color:#333; font-size: 16px; margin-top: 20px;">
+                                    IP của bạn: <b style="color: #4a90e2;">${userIP}</b><br>
+                                    không nằm trong danh sách được cấp phép.
+                                </p>
+                            </div>
+                        </body>
+                    `;
+                }
+            })
+            .catch(error => console.error("Không thể kiểm tra IP", error));
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -43,7 +80,6 @@
             font-size: 28px;
         }
 
-        /* Ẩn hiện các màn hình */
         .view { display: none; }
         .view.active { display: block; animation: fadeIn 0.3s ease; }
 
@@ -52,7 +88,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Thiết kế menu trang chủ */
         .menu-card {
             background-color: #fafbfc;
             border: 1px solid var(--border-color);
@@ -80,7 +115,6 @@
             font-size: 16px;
         }
 
-        /* Nút quay lại trang chủ */
         .btn-back {
             background-color: transparent;
             color: var(--text-main);
@@ -108,7 +142,6 @@
             border-bottom: 2px solid var(--border-color);
         }
 
-        /* Ô tìm kiếm nhanh */
         .search-group {
             margin-bottom: 15px;
         }
@@ -129,7 +162,6 @@
             box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
         }
 
-        /* Danh sách item */
         .item-row {
             display: flex;
             justify-content: space-between;
@@ -148,7 +180,6 @@
             word-break: break-all;
         }
 
-        /* Cụm nút Sửa / Xóa */
         .item-actions {
             display: flex;
             gap: 8px;
@@ -239,7 +270,6 @@
             font-style: italic;
         }
 
-        /* Khu vực nút chức năng trang chủ */
         .action-section {
             display: flex;
             justify-content: center;
@@ -250,7 +280,7 @@
             flex-wrap: wrap;
         }
 
-        .btn-export, .btn-clear {
+        .btn-export, .btn-clear, .btn-sync {
             padding: 12px 25px;
             color: white;
             border: none;
@@ -261,27 +291,16 @@
             transition: all 0.3s;
         }
 
-        .btn-export {
-            background-color: var(--primary-color);
-            box-shadow: 0 4px 6px rgba(74, 144, 226, 0.3);
-        }
+        .btn-export { background-color: var(--primary-color); box-shadow: 0 4px 6px rgba(74, 144, 226, 0.3); }
+        .btn-export:hover { background-color: var(--btn-hover); transform: translateY(-2px); box-shadow: 0 6px 10px rgba(74, 144, 226, 0.4); }
 
-        .btn-export:hover {
-            background-color: var(--btn-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 10px rgba(74, 144, 226, 0.4);
-        }
+        .btn-clear { background-color: #e74c3c; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3); }
+        .btn-clear:hover { background-color: #c0392b; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(231, 76, 60, 0.4); }
 
-        .btn-clear {
-            background-color: #e74c3c;
-            box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3);
-        }
-
-        .btn-clear:hover {
-            background-color: #c0392b;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 10px rgba(231, 76, 60, 0.4);
-        }
+        /* Nút Đồng bộ mới */
+        .btn-sync { background-color: #27ae60; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); }
+        .btn-sync:hover { background-color: #219a52; transform: translateY(-2px); box-shadow: 0 6px 10px rgba(39, 174, 96, 0.4); }
+        .btn-sync:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
     </style>
 </head>
 <body>
@@ -290,12 +309,12 @@
         <h1>运营问题反馈</h1>
         
         <div id="home-view" class="view active">
-            <div id="menu-list">
-            </div>
+            <div id="menu-list"></div>
 
             <div class="action-section">
-                <button class="btn-clear" onclick="resetAllCounts()">🗑️ </button>
+                <button class="btn-clear" onclick="resetAllCounts()">🗑️ 一键清零</button>
                 <button class="btn-export" onclick="exportToExcel()">📥 导出</button>
+                <button class="btn-sync" id="btnSync" onclick="syncToGoogleSheet()">🔄 同步 Google Sheet</button>
             </div>
         </div>
 
@@ -307,8 +326,7 @@
                 <input type="text" id="search-input" placeholder="🔍 搜索" oninput="filterItems()">
             </div>
             
-            <div id="item-list">
-            </div>
+            <div id="item-list"></div>
 
             <div class="add-item-group">
                 <input type="text" id="new-item-input" placeholder="输入新项目名称..." onkeypress="handleKeyPress(event)">
@@ -318,7 +336,9 @@
     </div>
 
     <script>
-        // Dữ liệu mặc định
+        // --- 🛑 THAY BẰNG WEB APP URL CỦA BẠN (TỪ GOOGLE APPS SCRIPT) ---
+        const GOOGLE_SHEET_URL = 'YOUR_WEB_APP_URL'; 
+
         const defaultState = [
             { id: 0, title: "1. 资金不同步，协助回收", items: [] },
             { id: 1, title: "2. 会员反馈资金掉失/转移异常", items: [] },
@@ -329,7 +349,6 @@
         let state = [];
         let currentCategoryIndex = null;
 
-        // Tải dữ liệu từ LocalStorage
         function loadData() {
             const savedData = localStorage.getItem('feedbackData');
             if (savedData) {
@@ -339,12 +358,10 @@
             }
         }
 
-        // Lưu dữ liệu vào LocalStorage
         function saveData() {
             localStorage.setItem('feedbackData', JSON.stringify(state));
         }
 
-        // Vẽ màn hình trang chủ
         function renderHome() {
             const menuList = document.getElementById('menu-list');
             menuList.innerHTML = '';
@@ -365,7 +382,6 @@
             });
         }
 
-        // Chuyển sang trang chi tiết
         function openCategory(index) {
             currentCategoryIndex = index;
             document.getElementById('home-view').classList.remove('active');
@@ -373,7 +389,6 @@
             renderDetail();
         }
 
-        // Quay lại trang chủ
         function goBack() {
             currentCategoryIndex = null;
             document.getElementById('search-input').value = ''; 
@@ -382,7 +397,6 @@
             renderHome();
         }
 
-        // Tính năng lọc/tìm kiếm danh sách
         function filterItems() {
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             const rows = document.querySelectorAll('.item-row');
@@ -397,7 +411,6 @@
             });
         }
 
-        // Vẽ màn hình chi tiết của 1 danh mục
         function renderDetail() {
             const category = state[currentCategoryIndex];
             document.getElementById('detail-title').innerText = category.title;
@@ -411,7 +424,6 @@
                 category.items.forEach((item, itemIndex) => {
                     const row = document.createElement('div');
                     row.className = 'item-row';
-                    // Đã thêm thẻ item-actions chứa nút Sửa và Xóa
                     row.innerHTML = `
                         <div class="item-name">${item.name}</div>
                         <div class="item-actions">
@@ -433,12 +445,12 @@
             filterItems();
         }
 
-        // Chức năng Sửa tên mục
+        // --- ĐÃ BỔ SUNG HÀM SỬA VÀ XÓA BỊ THIẾU ---
         function editItem(itemIndex) {
             const item = state[currentCategoryIndex].items[itemIndex];
             const newName = prompt("请输入新的项目名称 (Nhập tên mới cho dự án):", item.name);
             
-            if (newName !== null) { // Nếu người dùng không bấm Cancel
+            if (newName !== null) { 
                 const trimmedName = newName.trim();
                 if (trimmedName !== "") {
                     item.name = trimmedName;
@@ -450,20 +462,18 @@
             }
         }
 
-        // Chức năng Xóa mục
         function deleteItem(itemIndex) {
             const item = state[currentCategoryIndex].items[itemIndex];
             const isConfirmed = confirm(`您确定要删除 "${item.name}" 吗？\n(Bạn có chắc chắn muốn xóa mục "${item.name}" không?)`);
             
             if (isConfirmed) {
-                // Xóa phần tử khỏi mảng
                 state[currentCategoryIndex].items.splice(itemIndex, 1);
                 saveData();
                 renderDetail();
             }
         }
+        // --- KẾT THÚC HÀM BỔ SUNG ---
 
-        // Cập nhật số lượng (+ / -)
         function updateCount(itemIndex, change) {
             const item = state[currentCategoryIndex].items[itemIndex];
             if (item.count + change >= 0) {
@@ -473,7 +483,6 @@
             }
         }
 
-        // Thêm mục con mới
         function addNewItem() {
             const input = document.getElementById('new-item-input');
             const val = input.value.trim();
@@ -486,14 +495,12 @@
             }
         }
 
-        // Hỗ trợ ấn Enter để thêm
         function handleKeyPress(e) {
             if (e.key === 'Enter') {
                 addNewItem();
             }
         }
 
-        // Chức năng Xóa toàn bộ số lượng đếm về 0
         function resetAllCounts() {
             const confirmReset = confirm("您确定要将所有统计数据清零吗？\n(Bạn có chắc chắn muốn đưa TẤT CẢ số liệu đếm về 0 không?)");
             if (confirmReset) {
@@ -508,7 +515,6 @@
             }
         }
 
-        // Xuất file Excel
         function exportToExcel() {
             let exportData = [];
             
@@ -540,6 +546,39 @@
             const date = new Date();
             const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
             XLSX.writeFile(workbook, `运营问题统计_${dateString}.xlsx`);
+        }
+
+        // --- HÀM GỬI LÊN GOOGLE SHEET ---
+        async function syncToGoogleSheet() {
+            if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL === 'YOUR_WEB_APP_URL') {
+                alert("请先设置 Google Sheet URL！\n(Vui lòng thiết lập Link Google Sheet trong code trước!)");
+                return;
+            }
+
+            const btnSync = document.getElementById('btnSync');
+            const originalText = btnSync.innerText;
+            btnSync.innerText = "⏳ 同步中... (Đang đồng bộ)";
+            btnSync.disabled = true;
+
+            try {
+                const response = await fetch(GOOGLE_SHEET_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(state)
+                });
+
+                if (response.ok) {
+                    alert("✅ 同步成功！数据已更新到 Google Sheet。\n(Đồng bộ thành công!)");
+                } else {
+                    throw new Error('Network response was not ok');
+                }
+            } catch (error) {
+                console.error('Lỗi khi đồng bộ:', error);
+                alert("❌ 同步失败，请检查网络或 URL！\n(Đồng bộ thất bại, vui lòng kiểm tra mạng hoặc Link URL!)");
+            } finally {
+                btnSync.innerText = originalText;
+                btnSync.disabled = false;
+            }
         }
 
         // Khởi chạy ứng dụng
