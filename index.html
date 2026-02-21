@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运营问题反馈</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --border-color: #e1e4e8;
+            --btn-hover: #357ab8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .category-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .category-header {
+            background-color: #fafbfc;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .category-header:hover {
+            background-color: #f1f3f5;
+        }
+
+        .category-header::after {
+            content: '\25BC';
+            font-size: 14px;
+            transition: transform 0.3s;
+        }
+
+        .category-card.active .category-header::after {
+            transform: rotate(180deg);
+        }
+
+        .category-body {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .category-card.active .category-body {
+            display: block;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .item-name {
+            flex-grow: 1;
+            font-size: 16px;
+        }
+
+        .counter-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-count {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .btn-count:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .btn-count.minus {
+            background-color: #e74c3c;
+        }
+
+        .btn-count.minus:hover {
+            background-color: #c0392b;
+        }
+
+        .count-display {
+            font-weight: bold;
+            font-size: 18px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .add-item-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .add-item-group input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn-add {
+            padding: 10px 20px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-add:hover {
+            background-color: #27ae60;
+        }
+
+        .export-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn-export {
+            padding: 12px 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            box-shadow: 0 4px 6px rgba(74, 144, 226, 0.3);
+        }
+
+        .btn-export:hover {
+            background-color: var(--btn-hover);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>运营问题反馈</h1>
+        
+        <div id="app-content"></div>
+
+        <div class="export-section">
+            <button class="btn-export" onclick="exportToExcel()">📥 Lưu dữ liệu Excel</button>
+        </div>
+    </div>
+
+    <script>
+        // Cấu trúc dữ liệu trạng thái
+        const state = [
+            { id: 0, title: "1. 资金不同步，协助回收", open: false, items: [] },
+            { id: 1, title: "2. 会员反馈资金掉失/转移异常", open: false, items: [] },
+            { id: 2, title: "3. 注单结算错误", open: false, items: [] },
+            { id: 3, title: "4. 注单未结算问题", open: false, items: [] }
+        ];
+
+        // Hàm vẽ giao diện
+        function render() {
+            const container = document.getElementById('app-content');
+            container.innerHTML = '';
+
+            state.forEach((category, catIndex) => {
+                const card = document.createElement('div');
+                card.className = `category-card ${category.open ? 'active' : ''}`;
+
+                // Header
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.innerText = category.title;
+                header.onclick = () => {
+                    category.open = !category.open;
+                    render();
+                };
+
+                // Body
+                const body = document.createElement('div');
+                body.className = 'category-body';
+
+                // Danh sách các item bên trong
+                category.items.forEach((item, itemIndex) => {
+                    const itemRow = document.createElement('div');
+                    itemRow.className = 'item-row';
+                    
+                    itemRow.innerHTML = `
+                        <div class="item-name">${item.name}</div>
+                        <div class="counter-group">
+                            <button class="btn-count minus" onclick="updateCount(${catIndex}, ${itemIndex}, -1)">-</button>
+                            <span class="count-display">${item.count}</span>
+                            <button class="btn-count plus" onclick="updateCount(${catIndex}, ${itemIndex}, 1)">+</button>
+                        </div>
+                    `;
+                    body.appendChild(itemRow);
+                });
+
+                // Khu vực thêm mới item
+                const addGroup = document.createElement('div');
+                addGroup.className = 'add-item-group';
+                addGroup.innerHTML = `
+                    <input type="text" id="input-${catIndex}" placeholder="Nhập tên mục mới cần theo dõi...">
+                    <button class="btn-add" onclick="addNewItem(${catIndex})">Thêm</button>
+                `;
+                body.appendChild(addGroup);
+
+                card.appendChild(header);
+                card.appendChild(body);
+                container.appendChild(card);
+            });
+        }
+
+        // Hàm cập nhật số lượng
+        function updateCount(catIndex, itemIndex, change) {
+            const item = state[catIndex].items[itemIndex];
+            if (item.count + change >= 0) { // Không cho phép số âm
+                item.count += change;
+                render();
+            }
+        }
+
+        // Hàm thêm mục mới
+        function addNewItem(catIndex) {
+            const input = document.getElementById(`input-${catIndex}`);
+            const val = input.value.trim();
+            if (val !== "") {
+                state[catIndex].items.push({ name: val, count: 0 });
+                render();
+            } else {
+                alert("Vui lòng nhập tên mục!");
+            }
+        }
+
+        // Hàm xuất dữ liệu ra file Excel
+        function exportToExcel() {
+            let exportData = [];
+            
+            state.forEach(category => {
+                if (category.items.length === 0) {
+                    // Nếu danh mục trống
+                    exportData.push({
+                        "Phân loại (分类)": category.title,
+                        "Mục chi tiết (详细项目)": "Không có dữ liệu",
+                        "Số lượng (数量)": 0
+                    });
+                } else {
+                    category.items.forEach(item => {
+                        exportData.push({
+                            "Phân loại (分类)": category.title,
+                            "Mục chi tiết (详细项目)": item.name,
+                            "Số lượng (数量)": item.count
+                        });
+                    });
+                }
+            });
+
+            // Tạo worksheet từ mảng JSON
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            
+            // Chỉnh lại chiều rộng cột cho đẹp
+            const wscols = [
+                {wch: 35}, // Phân loại
+                {wch: 40}, // Mục chi tiết
+                {wch: 15}  // Số lượng
+            ];
+            worksheet['!cols'] = wscols;
+
+            // Tạo workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Thống kê lỗi");
+
+            // Xuất file
+            XLSX.writeFile(workbook, "Thong_Ke_Loi_Van_Hanh.xlsx");
+        }
+
+        // Khởi chạy lần đầu
+        render();
+    </script>
+</body>
+</html>
