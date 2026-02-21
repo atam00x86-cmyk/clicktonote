@@ -75,7 +75,7 @@
         }
 
         .menu-card::after {
-            content: '\276F'; /* Mũi tên chỉ sang phải */
+            content: '\276F';
             color: #999;
             font-size: 16px;
         }
@@ -106,6 +106,27 @@
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 2px solid var(--border-color);
+        }
+
+        /* Ô tìm kiếm nhanh */
+        .search-group {
+            margin-bottom: 15px;
+        }
+
+        .search-group input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .search-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
         }
 
         /* Danh sách item */
@@ -228,7 +249,7 @@
         
         <div id="home-view" class="view active">
             <div id="menu-list">
-                </div>
+            </div>
 
             <div class="export-section">
                 <button class="btn-export" onclick="exportToExcel()">📥 导出 Excel 数据</button>
@@ -239,8 +260,12 @@
             <button class="btn-back" onclick="goBack()">🔙 返回</button>
             <div id="detail-title" class="detail-title"></div>
             
+            <div class="search-group">
+                <input type="text" id="search-input" placeholder="🔍 搜索 / Tìm kiếm nhanh dự án..." oninput="filterItems()">
+            </div>
+            
             <div id="item-list">
-                </div>
+            </div>
 
             <div class="add-item-group">
                 <input type="text" id="new-item-input" placeholder="输入需要追踪的新项目名称..." onkeypress="handleKeyPress(event)">
@@ -261,7 +286,7 @@
         let state = [];
         let currentCategoryIndex = null;
 
-        // Tải dữ liệu từ LocalStorage (để chống mất dữ liệu khi F5)
+        // Tải dữ liệu từ LocalStorage
         function loadData() {
             const savedData = localStorage.getItem('feedbackData');
             if (savedData) {
@@ -306,9 +331,25 @@
         // Quay lại trang chủ
         function goBack() {
             currentCategoryIndex = null;
+            document.getElementById('search-input').value = ''; // Reset ô tìm kiếm khi quay lại
             document.getElementById('detail-view').classList.remove('active');
             document.getElementById('home-view').classList.add('active');
-            renderHome(); // Cập nhật lại số lượng mục ở trang chủ
+            renderHome();
+        }
+
+        // Tính năng lọc/tìm kiếm danh sách
+        function filterItems() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const rows = document.querySelectorAll('.item-row');
+            
+            rows.forEach(row => {
+                const itemName = row.querySelector('.item-name').innerText.toLowerCase();
+                if (itemName.includes(searchTerm)) {
+                    row.style.display = 'flex';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         }
 
         // Vẽ màn hình chi tiết của 1 danh mục
@@ -340,6 +381,9 @@
             // Xóa input cũ sau khi render
             document.getElementById('new-item-input').value = '';
             document.getElementById('new-item-input').focus();
+            
+            // Gọi lại hàm filter để duy trì kết quả tìm kiếm (nếu người dùng vừa thêm mới lúc đang tìm kiếm)
+            filterItems();
         }
 
         // Cập nhật số lượng (+ / -)
@@ -401,7 +445,6 @@
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "问题统计");
 
-            // Tạo tên file kèm theo ngày giờ
             const date = new Date();
             const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
             XLSX.writeFile(workbook, `运营问题统计_${dateString}.xlsx`);
