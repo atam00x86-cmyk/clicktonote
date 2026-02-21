@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>运营反馈系统 Pro</title>
+    <title>运营反馈系统 - Bulk Pro</title>
     
     <script>
         // --- 🛑 DANH SÁCH IP CHO PHÉP ---
@@ -19,7 +19,7 @@
                                 <div style="text-align:center;padding:50px;background:#fff;border-radius:32px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.08);max-width:400px;">
                                     <div style="font-size:64px;margin-bottom:20px;">🔒</div>
                                     <h1 style="color:#1e293b;margin:0;font-size:24px;font-weight:800;">访问受限</h1>
-                                    <p style="color:#64748b;margin:15px 0;line-height:1.6;">您的 IP <b style="color:#6366f1;">${data.ip}</b> 未获得系统授权，请联系管理员开放权限。</p>
+                                    <p style="color:#64748b;margin:15px 0;line-height:1.6;">您的 IP <b style="color:#6366f1;">${data.ip}</b> 未获得系统授权。</p>
                                 </div>
                             </body>`;
                     }
@@ -33,7 +33,7 @@
     <style>
         :root {
             --primary: #6366f1;
-            --primary-soft: #eef2ff;
+            --primary-hover: #4f46e5;
             --bg: #f8fafc;
             --card: #ffffff;
             --text-main: #1e293b;
@@ -41,10 +41,9 @@
             --danger: #ef4444;
             --success: #10b981;
             --border: #f1f5f9;
-            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -4px rgba(0, 0, 0, 0.02);
         }
 
-        * { box-sizing: border-box; transition: all 0.2s ease; }
+        * { box-sizing: border-box; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -54,149 +53,104 @@
             display: flex; justify-content: center;
         }
 
-        .container { width: 100%; max-width: 800px; animation: fadeIn 0.5s ease-out; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .container { width: 100%; max-width: 800px; animation: slideUp 0.5s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         header { text-align: center; margin-bottom: 40px; }
-        header h1 { font-size: 32px; font-weight: 800; margin: 0; color: var(--text-main); letter-spacing: -1px; }
-        header p { color: var(--text-sub); margin-top: 8px; font-size: 15px; }
+        header h1 { font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -1px; }
 
-        /* Card Style */
         .glass-card {
             background: var(--card);
-            border-radius: 24px;
+            border-radius: 28px;
             padding: 32px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--card);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+            border: 1px solid #fff;
         }
 
         .view { display: none; }
         .view.active { display: block; }
 
-        /* Menu Items */
+        /* Menu */
         .menu-grid { display: grid; gap: 16px; }
         .menu-item {
-            background: var(--card);
-            border: 1px solid var(--border);
-            padding: 20px 24px;
-            border-radius: 18px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            text-decoration: none;
+            background: #fff; border: 1px solid var(--border);
+            padding: 24px; border-radius: 20px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .menu-item:hover {
-            transform: translateY(-2px);
-            border-color: var(--primary);
-            box-shadow: 0 12px 20px -10px rgba(99, 102, 241, 0.15);
-        }
-        .menu-item span:first-child { font-weight: 600; font-size: 17px; }
-        .count-badge {
-            background: var(--primary-soft);
-            color: var(--primary);
-            padding: 4px 12px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 700;
-        }
+        .menu-item:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 12px 25px -10px rgba(99, 102, 241, 0.2); }
+        .count-badge { background: #eef2ff; color: var(--primary); padding: 6px 14px; border-radius: 12px; font-size: 14px; font-weight: 800; }
 
-        /* Detail View */
-        .btn-back {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: var(--primary-soft); color: var(--primary);
-            border: none; padding: 10px 18px; border-radius: 12px;
-            font-weight: 600; cursor: pointer; margin-bottom: 24px;
-        }
-        .btn-back:hover { background: var(--primary); color: white; }
+        /* Detail */
+        .btn-back { background: #f1f5f9; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-bottom: 25px; color: var(--text-sub); }
+        .btn-back:hover { background: #e2e8f0; color: var(--text-main); }
 
-        .item-row {
-            display: flex; align-items: center; gap: 16px;
-            padding: 16px; border-bottom: 1px solid var(--border);
-        }
-        .item-row:last-child { border: none; }
+        .item-list-container { max-height: 450px; overflow-y: auto; padding-right: 5px; margin-bottom: 20px; }
+        .item-row { display: flex; align-items: center; gap: 16px; padding: 18px; background: #fff; border-radius: 18px; border: 1px solid var(--border); margin-bottom: 12px; }
         .item-info { flex-grow: 1; }
-        .item-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
-        
-        /* Counter Controls */
-        .counter-box {
-            display: flex; align-items: center;
-            background: var(--bg);
-            padding: 6px; border-radius: 14px; gap: 12px;
-        }
-        .btn-ctrl {
-            width: 34px; height: 34px; border-radius: 10px; border: none;
-            font-size: 18px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .item-name { font-weight: 600; margin-bottom: 4px; }
+
+        /* Counter */
+        .counter-box { display: flex; align-items: center; background: #f8fafc; padding: 5px; border-radius: 14px; gap: 10px; }
+        .btn-ctrl { width: 36px; height: 36px; border-radius: 10px; border: none; font-size: 20px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-minus { background: #fee2e2; color: var(--danger); }
         .btn-plus { background: var(--primary); color: white; }
-        .val-display { font-weight: 800; min-width: 25px; text-align: center; font-size: 17px; }
+        .val-display { font-weight: 800; min-width: 30px; text-align: center; font-size: 18px; }
 
-        /* Actions */
-        .input-group {
-            display: flex; gap: 12px; margin-top: 30px;
-            background: var(--bg); padding: 8px; border-radius: 16px;
+        /* Bulk Input */
+        .bulk-add-area {
+            background: #f8fafc; border: 2px dashed #e2e8f0;
+            border-radius: 20px; padding: 15px; margin-top: 25px;
         }
-        .input-group input {
-            flex-grow: 1; border: none; background: transparent;
-            padding: 10px 15px; font-family: inherit; font-size: 15px; outline: none;
+        .bulk-add-area textarea {
+            width: 100%; border: none; background: transparent;
+            min-height: 80px; outline: none; font-family: inherit;
+            font-size: 15px; resize: vertical; padding: 10px;
         }
-        .btn-add {
-            background: var(--text-main); color: white; border: none;
-            padding: 10px 24px; border-radius: 12px; font-weight: 600; cursor: pointer;
+        .btn-bulk-save {
+            width: 100%; background: var(--text-main); color: white;
+            border: none; padding: 15px; border-radius: 14px;
+            font-weight: 700; margin-top: 10px; cursor: pointer;
         }
+        .btn-bulk-save:hover { background: #000; }
 
-        .footer-actions {
-            display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-top: 40px;
-        }
-        .btn-footer {
-            padding: 16px; border-radius: 18px; border: none;
-            font-weight: 700; cursor: pointer; font-size: 16px;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
+        /* Footer */
+        .footer-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-top: 30px; }
+        .btn-footer { padding: 18px; border-radius: 18px; border: none; font-weight: 700; cursor: pointer; font-size: 16px; }
         .btn-reset { background: #fff; border: 2px solid #fee2e2; color: var(--danger); }
-        .btn-reset:hover { background: #fee2e2; }
-        .btn-export { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.3); }
-        .btn-export:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn-export { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4); }
 
-        .search-box {
-            width: 100%; border: 1px solid var(--border); border-radius: 14px;
-            padding: 12px 18px; margin-bottom: 20px; outline: none; font-family: inherit;
-        }
-        .search-box:focus { border-color: var(--primary); }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <header>
-            <h1>运营反馈系统</h1>
+            <h1 id="header-title">运营反馈系统</h1>
             <p id="current-date-text"></p>
         </header>
 
         <div class="glass-card">
             <div id="home-view" class="view active">
                 <div class="menu-grid" id="menu-list"></div>
-                
                 <div class="footer-actions">
-                    <button class="btn-footer btn-reset" onclick="resetAllCounts()">🗑️ 清零</button>
+                    <button class="btn-footer btn-reset" onclick="resetAllCounts()">🗑️ 全部清零</button>
                     <button class="btn-footer btn-export" onclick="exportToExcel()">📥 导出 Excel</button>
                 </div>
             </div>
 
             <div id="detail-view" class="view">
-                <button class="btn-back" onclick="goBack()">← 返回主页</button>
-                <div id="detail-header">
-                    <h2 id="detail-title" style="margin:0 0 20px 0; font-size: 24px;"></h2>
-                </div>
-                <input type="text" class="search-box" id="search-input" placeholder="🔍 搜索项目..." oninput="filterItems()">
-                <div id="item-list"></div>
+                <button class="btn-back" onclick="goBack()">← 返回</button>
+                <h2 id="detail-title" style="margin: 0 0 20px 0; font-size: 22px; font-weight: 800;"></h2>
                 
-                <div class="input-group">
-                    <input type="text" id="new-item-input" placeholder="输入新反馈项目名称..." onkeypress="if(event.key==='Enter')addNewItem()">
-                    <button class="btn-add" onclick="addNewItem()">添加</button>
+                <div class="item-list-container" id="item-list"></div>
+                
+                <div class="bulk-add-area">
+                    <div style="font-size: 13px; color: var(--text-sub); font-weight: 600; margin-bottom: 8px; padding-left: 10px;">批量添加 (支持粘贴多行)</div>
+                    <textarea id="bulk-input" placeholder="请在此粘贴项目列表，每行一个项目..."></textarea>
+                    <button class="btn-bulk-save" onclick="handleBulkAdd()">确认添加</button>
                 </div>
             </div>
         </div>
@@ -213,27 +167,27 @@
         let state = [];
         let currentCategoryIndex = null;
 
-        // Hiển thị ngày tháng trên Header
-        const now = new Date();
-        document.getElementById('current-date-text').innerText = `今天是 ${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+        // Set Date
+        const d = new Date();
+        document.getElementById('current-date-text').innerText = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
 
         function loadData() {
-            const saved = localStorage.getItem('feedbackData_v2');
+            const saved = localStorage.getItem('feedback_data_pro');
             state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultState));
         }
 
-        function saveData() { localStorage.setItem('feedbackData_v2', JSON.stringify(state)); }
+        function saveData() { localStorage.setItem('feedback_data_pro', JSON.stringify(state)); }
 
         function renderHome() {
             const list = document.getElementById('menu-list');
             list.innerHTML = '';
             state.forEach((cat, idx) => {
-                const total = cat.items.reduce((sum, i) => sum + i.count, 0);
-                const div = document.createElement('div');
-                div.className = 'menu-item';
-                div.innerHTML = `<span>${cat.title}</span><span class="count-badge">${total}</span>`;
-                div.onclick = () => openCategory(idx);
-                list.appendChild(div);
+                const total = cat.items.reduce((s, i) => s + i.count, 0);
+                const item = document.createElement('div');
+                item.className = 'menu-item';
+                item.innerHTML = `<span>${cat.title}</span><span class="count-badge">${total}</span>`;
+                item.onclick = () => openCategory(idx);
+                list.appendChild(item);
             });
         }
 
@@ -255,12 +209,12 @@
             const cat = state[currentCategoryIndex];
             document.getElementById('detail-title').innerText = cat.title;
             const list = document.getElementById('item-list');
-            list.innerHTML = cat.items.length ? '' : '<p style="text-align:center; color:#94a3b8; padding:20px;">暂无数据，请添加新项目</p>';
+            list.innerHTML = '';
             
             cat.items.forEach((item, idx) => {
-                const div = document.createElement('div');
-                div.className = 'item-row';
-                div.innerHTML = `
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
                     <div class="item-info">
                         <div class="item-name">${item.name}</div>
                         <div style="font-size:12px; color:#94a3b8;">
@@ -273,8 +227,35 @@
                         <span class="val-display">${item.count}</span>
                         <button class="btn-ctrl btn-plus" onclick="updateCount(${idx}, 1)">+</button>
                     </div>`;
-                list.appendChild(div);
+                list.appendChild(row);
             });
+        }
+
+        // Logic tách dòng khi thêm nhiều
+        function handleBulkAdd() {
+            const input = document.getElementById('bulk-input');
+            const lines = input.value.split('\n'); // Tách theo dòng
+            let count = 0;
+
+            lines.forEach(line => {
+                const name = line.trim();
+                if (name) {
+                    // Kiểm tra xem đã tồn tại chưa để tránh trùng (tùy chọn)
+                    const exists = state[currentCategoryIndex].items.some(i => i.name === name);
+                    if (!exists) {
+                        state[currentCategoryIndex].items.push({ name: name, count: 0 });
+                        count++;
+                    }
+                }
+            });
+
+            if (count > 0) {
+                saveData();
+                renderDetail();
+                input.value = '';
+            } else {
+                alert("请输入内容或内容已存在");
+            }
         }
 
         function updateCount(idx, chg) {
@@ -285,72 +266,44 @@
             }
         }
 
-        function addNewItem() {
-            const input = document.getElementById('new-item-input');
-            const val = input.value.trim();
-            if (val) {
-                state[currentCategoryIndex].items.push({ name: val, count: 0 });
-                saveData(); renderDetail(); input.value = '';
-            }
-        }
-
         function editItem(idx) {
-            const n = prompt("修改项目名称:", state[currentCategoryIndex].items[idx].name);
+            const n = prompt("修改名称:", state[currentCategoryIndex].items[idx].name);
             if (n) { state[currentCategoryIndex].items[idx].name = n; saveData(); renderDetail(); }
         }
 
         function deleteItem(idx) {
-            if (confirm("确定要删除此项吗？")) {
-                state[currentCategoryIndex].items.splice(idx, 1);
-                saveData(); renderDetail();
-            }
+            if (confirm("确定删除？")) { state[currentCategoryIndex].items.splice(idx, 1); saveData(); renderDetail(); }
         }
 
         function resetAllCounts() {
-            if (confirm("⚠️ 注意：这将把所有统计数值重置为 0，确定吗？")) {
+            if (confirm("⚠️ 是否清空所有统计数据？")) {
                 state.forEach(c => c.items.forEach(i => i.count = 0));
                 saveData(); renderHome();
             }
         }
 
-        function filterItems() {
-            const query = document.getElementById('search-input').value.toLowerCase();
-            const rows = document.querySelectorAll('.item-row');
-            rows.forEach(row => {
-                const text = row.querySelector('.item-name').innerText.toLowerCase();
-                row.style.display = text.includes(query) ? 'flex' : 'none';
-            });
-        }
-
-        // --- 📥 HÀM XUẤT EXCEL TỐI ƯU ---
         function exportToExcel() {
-            const exportData = [];
+            const data = [];
             state.forEach(cat => {
                 cat.items.forEach(item => {
                     if (item.count > 0) {
-                        exportData.push({
-                            "反馈分类": cat.title,
-                            "具体项目": item.name,
-                            "统计数量": item.count
-                        });
+                        data.push({ "分类": cat.title, "项目": item.name, "数量": item.count });
                     }
                 });
             });
 
-            if (exportData.length === 0) return alert("当前没有统计数据（数值均为0）");
+            if (data.length === 0) return alert("无可导出的数据");
 
-            const ws = XLSX.utils.json_to_sheet(exportData);
+            const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "统计结果");
+            XLSX.utils.book_append_sheet(wb, ws, "统计");
 
-            // Xử lý tên file: 运营问题统计_YYYYMMDD
-            const d = new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            const fileName = `运营问题统计_${year}${month}${day}.xlsx`;
-
-            XLSX.writeFile(wb, fileName);
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            
+            XLSX.writeFile(wb, `运营问题统计_${year}${month}${day}.xlsx`);
         }
 
         loadData();
