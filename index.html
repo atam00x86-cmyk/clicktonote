@@ -145,8 +145,8 @@
     if (cloudUpdatedAt && cloudUpdatedAt <= lastUpdatedAt) return;
 
     state = cloudRes.db.length ? cloudRes.db : [
-      { title: "1. 资金不同步", items: [] },
-      { title: "2. 会员反馈异常", items: [] }
+      { title: "1. 资金不同步，协助回收", items: [] },
+      { title: "2. 会员反馈资金掉失/转移异常", items: [] },{ title: "3. 三方游戏场馆维护", items: [] },{ title: "4. 注单结算错误", items: [] },{ title: "5. 三方未结算问题", items: [] },
     ];
 
     lastUpdatedAt = cloudUpdatedAt || Date.now();
