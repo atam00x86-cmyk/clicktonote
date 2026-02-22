@@ -104,7 +104,6 @@
 
         <div class="bulk-area">
           <div style="font-size:13px; color:var(--text-sub); font-weight:800; margin-bottom:10px;">
-            批量添加项目（每行一个）
           </div>
           <textarea id="bulk-input" placeholder="请粘贴项目列表..."></textarea>
           <button class="btn-confirm" onclick="processBulk()">确认添加项目</button>
@@ -114,7 +113,9 @@
   </div>
 
 <script>
-  // ✅ YOUR WEB APP URL
+  // 🟢 BẬT THÀNH TRUE NẾU MUỐN ÉP CLOUD XÓA DỮ LIỆU CŨ VÀ TẠO LẠI 5 MỤC (CHẠY 1 LẦN RỒI ĐỔI LẠI THÀNH FALSE)
+  const FORCE_RESET_CATEGORIES = true; 
+
   const API_URL = "https://script.google.com/macros/s/AKfycbyGxPCvLsCPa6iC0J845r5LHDTJXVOSsXclNTsg1-pkvOUn7jlGMGiCRXfjHa5sJ-PD/exec";
 
   let state = [];
@@ -125,6 +126,14 @@
   let lastUpdatedAt = 0;
   let isSaving = false;
   const POLL_MS = 1000;
+
+  const defaultCategories = [
+      { title: "1. 资金不同步，协助回收", items: [] },
+      { title: "2. 会员反馈资金掉失/转移异常", items: [] },
+      { title: "3. 三方游戏场馆维护", items: [] },
+      { title: "4. 注单结算错误", items: [] },
+      { title: "5. 三方未结算问题", items: [] }
+  ];
 
   const d = new Date();
   document.getElementById('date-label').innerText = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
@@ -137,17 +146,18 @@
   }
 
   function applyCloud(cloudRes) {
-    // expect: { allowedIPs, updatedAt, db }
     if (!cloudRes) return;
     if (!Array.isArray(cloudRes.db)) return;
 
     const cloudUpdatedAt = Number(cloudRes.updatedAt || 0);
     if (cloudUpdatedAt && cloudUpdatedAt <= lastUpdatedAt) return;
 
-    state = cloudRes.db.length ? cloudRes.db : [
-      { title: "1. 资金不同步，协助回收", items: [] },
-      { title: "2. 会员反馈资金掉失/转移异常", items: [] },{ title: "3. 三方游戏场馆维护", items: [] },{ title: "4. 注单结算错误", items: [] },{ title: "5. 三方未结算问题", items: [] },
-    ];
+    // Chỉ dùng Cloud DB nếu nó có dữ liệu VÀ biến FORCE_RESET_CATEGORIES = false
+    if (!FORCE_RESET_CATEGORIES && cloudRes.db.length > 0) {
+        state = cloudRes.db;
+    } else {
+        state = JSON.parse(JSON.stringify(defaultCategories));
+    }
 
     lastUpdatedAt = cloudUpdatedAt || Date.now();
 
@@ -191,15 +201,23 @@
         return;
       }
 
-      // init state
-      state = (Array.isArray(cloudRes.db) && cloudRes.db.length) ? cloudRes.db : [
-        { title: "1. 资金不同步", items: [] },
-        { title: "2. 会员反馈异常", items: [] }
-      ];
+      // Khởi tạo state ban đầu
+      if (!FORCE_RESET_CATEGORIES && Array.isArray(cloudRes.db) && cloudRes.db.length > 0) {
+          state = cloudRes.db;
+      } else {
+          state = JSON.parse(JSON.stringify(defaultCategories));
+      }
+      
       lastUpdatedAt = Number(cloudRes.updatedAt || Date.now());
 
       document.getElementById('auth-overlay').style.display = 'none';
       renderHome();
+      
+      // Nếu ép reset, lưu luôn 5 mục lên Cloud
+      if (FORCE_RESET_CATEGORIES) {
+          syncCloud();
+      }
+
       startPolling();
 
     } catch (e) {
@@ -216,7 +234,6 @@
       try {
         const payload = { updatedAt: Date.now(), db: state };
 
-        // ✅ IMPORTANT: NO headers -> avoid CORS preflight on GAS
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify(payload)
@@ -369,54 +386,4 @@
   }
 
   function deleteItem(i) {
-    if (confirm("确定删除该项目?")) {
-      state[activeIdx].items.splice(i, 1);
-      renderDetail();
-      syncCloud();
-    }
-  }
-
-  function resetAll() {
-    if (confirm("⚠️ 确定要清零所有项目的数值吗？(分类和项目名将保留)")) {
-      state.forEach(c => (c.items || []).forEach(i => i.count = 0));
-      renderHome();
-      syncCloud();
-    }
-  }
-
-  function searchItems() {
-    const k = document.getElementById('search-box').value.toLowerCase();
-    document.querySelectorAll('.item-row').forEach(r => {
-      const name = (r.getAttribute('data-name') || "").toLowerCase();
-      r.style.display = name.includes(k) ? 'flex' : 'none';
-    });
-  }
-
-  function exportData() {
-    let d = [];
-    state.forEach(c => (c.items || []).forEach(i => {
-      const count = Number(i.count) || 0;
-      if (count > 0) d.push({ "分类": c.title, "项目": i.name, "数量": count });
-    }));
-    if (d.length === 0) return alert("无可导出数据");
-
-    const ws = XLSX.utils.json_to_sheet(d);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Data");
-
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-    XLSX.writeFile(wb, `运营问题统计_${dateStr}.xlsx`);
-  }
-
-  // -------- Small helper --------
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, (m) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m]));
-  }
-
-  init();
-</script>
-</body>
-</html>
+    if (confirm("确定删除该项目?
