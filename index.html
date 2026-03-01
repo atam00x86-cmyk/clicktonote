@@ -26,7 +26,6 @@
 
     .view { display: none; } .view.active { display: block; }
 
-    /* Menu Item Styles */
     .menu-item { background: #fff; border: 1px solid var(--border); padding: 20px 26px; border-radius: 24px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: relative; }
     .menu-item:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.1); }
     .menu-content { flex: 1; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-right: 15px; }
@@ -122,17 +121,15 @@
   let activeIdx = null;
   let debounceTimer = null;
 
-  // --- CẤU HÌNH IP QUẢN TRỊ VIÊN ---
+  // --- CẤU HÌNH IP QUẢN TRỊ VIÊN (ĐÃ SỬA THÀNH MẢNG) ---
   let currentUserIP = ""; 
-  const ADMIN_IP = ["180.232.127.105", "8.217.98.79"]; // Ví dụ: "14.232.123.45"
-  // ---------------------------------
+  const ADMIN_IP = ["180.232.127.105", "8.217.98.79"]; 
+  // ---------------------------------------------------
 
-  // realtime
   let lastUpdatedAt = 0;
   let isSaving = false;
   const POLL_MS = 1000;
 
-  // Mảng chứa tên 5 mục cố định để bảo vệ
   const fixedTitles = [
       "1. 资金不同步，协助回收",
       "2. 会员反馈资金掉失/转移异常",
@@ -146,7 +143,6 @@
   const d = new Date();
   document.getElementById('date-label').innerText = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
 
-  // -------- Cloud Helpers --------
   async function fetchCloud() {
     const res = await fetch(API_URL, { cache: "no-store" });
     if (!res.ok) throw new Error("GET failed: " + res.status);
@@ -163,15 +159,11 @@
     let cloudData = cloudRes.db;
 
     if (!FORCE_RESET_CATEGORIES && cloudData.length > 0) {
-        // LUÔN LUÔN ÉP 5 MỤC ĐẦU TIÊN THEO ĐÚNG THỨ TỰ CỦA fixedTitles
         let newState = fixedTitles.map(title => {
             let found = cloudData.find(c => c.title === title);
             return found ? found : { title: title, items: [] };
         });
-
-        // Tìm các danh mục được thêm mới (không nằm trong 5 mục mặc định)
         let otherCats = cloudData.filter(c => !fixedTitles.includes(c.title));
-        
         state = newState.concat(otherCats);
     } else {
         state = JSON.parse(JSON.stringify(defaultCategories));
@@ -191,9 +183,7 @@
       try {
         const cloudRes = await fetchCloud();
         applyCloud(cloudRes);
-      } catch (e) {
-        // ignore polling errors
-      }
+      } catch (e) {}
     }, POLL_MS);
   }
 
@@ -220,15 +210,10 @@
         return;
       }
 
-      applyCloud(cloudRes); // Gọi applyCloud để xử lý khởi tạo đúng chuẩn
-
+      applyCloud(cloudRes);
       document.getElementById('auth-overlay').style.display = 'none';
       renderHome();
-      
-      if (FORCE_RESET_CATEGORIES) {
-          syncCloud();
-      }
-
+      if (FORCE_RESET_CATEGORIES) syncCloud();
       startPolling();
 
     } catch (e) {
@@ -237,7 +222,7 @@
         <span style="color:red; font-size:18px;">❌ Lỗi kết nối: ${e.message}</span><br><br>
         <span style="font-size:14px; color:#64748b">Vui lòng nhấn F12 -> chọn thẻ Console để xem chi tiết lỗi.</span>
       `;
-      console.error("🚨 XXX:", e);
+      console.error("🚨 Error:", e);
     }
   }
 
@@ -249,26 +234,21 @@
       isSaving = true;
       try {
         const payload = { updatedAt: Date.now(), db: state };
-
         const res = await fetch(API_URL, {
           method: 'POST',
           body: JSON.stringify(payload)
         });
-
         if (!res.ok) throw new Error("POST failed: " + res.status);
-
         lastUpdatedAt = payload.updatedAt;
         document.getElementById('sync-label').innerText = "✅ 已同步";
       } catch (e) {
         document.getElementById('sync-label').innerText = "❌ 同步失败";
-        console.log("sync error:", e);
       } finally {
         isSaving = false;
       }
     }, 500);
   }
 
-  // -------- CATEGORY ACTIONS --------
   function addCategory() {
     const input = document.getElementById('new-cat-input');
     const title = input.value.trim();
@@ -282,8 +262,7 @@
 
   function editCategory(i, event) {
     event.stopPropagation();
-    if (i < 5) return alert("⚠️ 核心分类不能修改！\n(Không thể sửa tên 5 mục mặc định)");
-
+    if (i < 5) return alert("⚠️ 核心分类不能修改！");
     const newTitle = prompt("修改分类名称:", state[i].title);
     if (newTitle && newTitle.trim() !== "") {
       state[i].title = newTitle.trim();
@@ -294,9 +273,10 @@
 
   function deleteCategory(i, event) {
     event.stopPropagation();
-    if (i < 5) return alert("⚠️ 核心分类不能删除！\n(Không thể xóa 5 mục mặc định)");
+    if (i < 5) return alert("⚠️ 核心分类不能删除！");
     
-    if (currentUserIP !== ADMIN_IP) {
+    // Kiểm tra quyền Admin bằng mảng .includes()
+    if (!ADMIN_IP.includes(currentUserIP)) {
       alert("⚠️ 您没有权限删除此分类！\n(Bạn không có quyền xóa danh mục này)");
       return;
     }
@@ -317,15 +297,11 @@
       const div = document.createElement('div');
       div.className = 'menu-item';
       
-      const isFixed = i < 5; // 5 mục đầu tiên được xem là cố định
+      const isFixed = i < 5;
+      const editBtn = !isFixed ? `<button class="btn-action" onclick="editCategory(${i}, event)" title="编辑">✏️</button>` : ``;
 
-      // Nút Sửa: Chỉ hiện nếu KHÔNG phải mục cố định
-      const editBtn = !isFixed 
-        ? `<button class="btn-action" onclick="editCategory(${i}, event)" title="编辑">✏️</button>` 
-        : ``;
-
-      // Nút Xóa: Chỉ hiện nếu KHÔNG phải mục cố định VÀ là IP Admin
-      const deleteBtn = (!isFixed && currentUserIP === ADMIN_IP)
+      // Kiểm tra quyền hiển thị nút xóa
+      const deleteBtn = (!isFixed && ADMIN_IP.includes(currentUserIP))
         ? `<button class="btn-action" onclick="deleteCategory(${i}, event)" title="删除">🗑️</button>` 
         : '';
 
@@ -386,7 +362,6 @@
     });
   }
 
-  // -------- ITEM ACTIONS --------
   function changeCount(i, v) {
     const it = state[activeIdx].items[i];
     const next = (Number(it.count) || 0) + v;
@@ -400,7 +375,6 @@
   function processBulk() {
     const input = document.getElementById('bulk-input');
     const lines = input.value.split('\n');
-
     lines.forEach(line => {
       const name = line.trim();
       if (!name) return;
@@ -408,7 +382,6 @@
         state[activeIdx].items.push({ name: name, count: 0 });
       }
     });
-
     input.value = '';
     renderDetail();
     syncCloud();
@@ -432,7 +405,7 @@
   }
 
   function resetAll() {
-    if (confirm("⚠️ 确定要清零所有项目的数值吗？(分类和项目名将保留)")) {
+    if (confirm("⚠️ 确定要清零所有项目的数值吗？")) {
       state.forEach(c => (c.items || []).forEach(i => i.count = 0));
       renderHome();
       syncCloud();
@@ -454,17 +427,14 @@
       if (count > 0) d.push({ "分类": c.title, "项目": i.name, "数量": count });
     }));
     if (d.length === 0) return alert("无可导出数据");
-
     const ws = XLSX.utils.json_to_sheet(d);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Data");
-
     const now = new Date();
     const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
     XLSX.writeFile(wb, `运营问题统计_${dateStr}.xlsx`);
   }
 
-  // -------- Small helper --------
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (m) => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
