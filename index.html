@@ -30,7 +30,7 @@
     .menu-item { background: #fff; border: 1px solid var(--border); padding: 20px 26px; border-radius: 24px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: relative; }
     .menu-item:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.1); }
     .menu-content { flex: 1; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-right: 15px; }
-    .menu-actions { display: flex; gap: 8px; }
+    .menu-actions { display: flex; gap: 8px; min-width: 60px; justify-content: flex-end; }
     .btn-action { background: none; border: none; cursor: pointer; padding: 5px; font-size: 16px; opacity: 0.5; }
     .btn-action:hover { opacity: 1; }
 
@@ -114,28 +114,34 @@
   </div>
 
 <script>
-  // 🟢 BẬT THÀNH TRUE NẾU MUỐN ÉP CLOUD XÓA DỮ LIỆU CŨ VÀ TẠO LẠI 5 MỤC (CHẠY 1 LẦN RỒI ĐỔI LẠI THÀNH FALSE)
   const FORCE_RESET_CATEGORIES = false; 
 
-  // ✅ YOUR WEB APP URL (Đảm bảo đuôi là /exec, không phải /dev)
   const API_URL = "https://script.google.com/macros/s/AKfycbye9WuFLgRWBwxOHhu27ov8U_Yj_fqcWpB_zA_REYxtAcZPBFozedYxrVK4joFLgieB/exec";
 
   let state = [];
   let activeIdx = null;
   let debounceTimer = null;
 
+  // --- CẤU HÌNH IP QUẢN TRỊ VIÊN ---
+  let currentUserIP = ""; 
+  const ADMIN_IP = "180.232.127.105"; // Ví dụ: "14.232.123.45"
+  // ---------------------------------
+
   // realtime
   let lastUpdatedAt = 0;
   let isSaving = false;
   const POLL_MS = 1000;
 
-  const defaultCategories = [
-      { title: "1. 资金不同步，协助回收", items: [] },
-      { title: "2. 会员反馈资金掉失/转移异常", items: [] },
-      { title: "3. 三方游戏场馆维护", items: [] },
-      { title: "4. 注单结算错误", items: [] },
-      { title: "5. 三方未结算问题", items: [] }
+  // Mảng chứa tên 5 mục cố định để bảo vệ
+  const fixedTitles = [
+      "1. 资金不同步，协助回收",
+      "2. 会员反馈资金掉失/转移异常",
+      "3. 三方游戏场馆维护",
+      "4. 注单结算错误",
+      "5. 三方未结算问题"
   ];
+
+  const defaultCategories = fixedTitles.map(t => ({ title: t, items: [] }));
 
   const d = new Date();
   document.getElementById('date-label').innerText = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
@@ -154,9 +160,19 @@
     const cloudUpdatedAt = Number(cloudRes.updatedAt || 0);
     if (cloudUpdatedAt && cloudUpdatedAt <= lastUpdatedAt) return;
 
-    // Chỉ dùng Cloud DB nếu nó có dữ liệu VÀ biến FORCE_RESET_CATEGORIES = false
-    if (!FORCE_RESET_CATEGORIES && cloudRes.db.length > 0) {
-        state = cloudRes.db;
+    let cloudData = cloudRes.db;
+
+    if (!FORCE_RESET_CATEGORIES && cloudData.length > 0) {
+        // LUÔN LUÔN ÉP 5 MỤC ĐẦU TIÊN THEO ĐÚNG THỨ TỰ CỦA fixedTitles
+        let newState = fixedTitles.map(title => {
+            let found = cloudData.find(c => c.title === title);
+            return found ? found : { title: title, items: [] };
+        });
+
+        // Tìm các danh mục được thêm mới (không nằm trong 5 mục mặc định)
+        let otherCats = cloudData.filter(c => !fixedTitles.includes(c.title));
+        
+        state = newState.concat(otherCats);
     } else {
         state = JSON.parse(JSON.stringify(defaultCategories));
     }
@@ -188,7 +204,8 @@
         fetchCloud()
       ]);
 
-      const userIP = (ipRes.ip || "").trim();
+      currentUserIP = (ipRes.ip || "").trim();
+      const userIP = currentUserIP; 
       const allowedList = cloudRes.allowedIPs || [];
 
       if (!allowedList.includes(userIP)) {
@@ -203,19 +220,11 @@
         return;
       }
 
-      // Khởi tạo state ban đầu
-      if (!FORCE_RESET_CATEGORIES && Array.isArray(cloudRes.db) && cloudRes.db.length > 0) {
-          state = cloudRes.db;
-      } else {
-          state = JSON.parse(JSON.stringify(defaultCategories));
-      }
-      
-      lastUpdatedAt = Number(cloudRes.updatedAt || Date.now());
+      applyCloud(cloudRes); // Gọi applyCloud để xử lý khởi tạo đúng chuẩn
 
       document.getElementById('auth-overlay').style.display = 'none';
       renderHome();
       
-      // Nếu ép reset, lưu luôn 5 mục lên Cloud
       if (FORCE_RESET_CATEGORIES) {
           syncCloud();
       }
@@ -223,7 +232,6 @@
       startPolling();
 
     } catch (e) {
-      // 🚨 ĐÃ THAY ĐỔI: In lỗi ra giao diện và tắt vòng xoay 🚨
       document.querySelector('.loader').style.display = 'none';
       document.getElementById('auth-msg').innerHTML = `
         <span style="color:red; font-size:18px;">❌ Lỗi kết nối: ${e.message}</span><br><br>
@@ -274,6 +282,8 @@
 
   function editCategory(i, event) {
     event.stopPropagation();
+    if (i < 5) return alert("⚠️ 核心分类不能修改！\n(Không thể sửa tên 5 mục mặc định)");
+
     const newTitle = prompt("修改分类名称:", state[i].title);
     if (newTitle && newTitle.trim() !== "") {
       state[i].title = newTitle.trim();
@@ -284,6 +294,13 @@
 
   function deleteCategory(i, event) {
     event.stopPropagation();
+    if (i < 5) return alert("⚠️ 核心分类不能删除！\n(Không thể xóa 5 mục mặc định)");
+    
+    if (currentUserIP !== ADMIN_IP) {
+      alert("⚠️ 您没有权限删除此分类！\n(Bạn không có quyền xóa danh mục này)");
+      return;
+    }
+
     if (confirm(`确定要删除分类 "${state[i].title}" 及其所有数据吗？`)) {
       state.splice(i, 1);
       if (activeIdx !== null && activeIdx >= state.length) activeIdx = null;
@@ -299,14 +316,27 @@
       const total = (cat.items || []).reduce((s, item) => s + (Number(item.count) || 0), 0);
       const div = document.createElement('div');
       div.className = 'menu-item';
+      
+      const isFixed = i < 5; // 5 mục đầu tiên được xem là cố định
+
+      // Nút Sửa: Chỉ hiện nếu KHÔNG phải mục cố định
+      const editBtn = !isFixed 
+        ? `<button class="btn-action" onclick="editCategory(${i}, event)" title="编辑">✏️</button>` 
+        : ``;
+
+      // Nút Xóa: Chỉ hiện nếu KHÔNG phải mục cố định VÀ là IP Admin
+      const deleteBtn = (!isFixed && currentUserIP === ADMIN_IP)
+        ? `<button class="btn-action" onclick="deleteCategory(${i}, event)" title="删除">🗑️</button>` 
+        : '';
+
       div.innerHTML = `
         <div class="menu-content" onclick="showDetail(${i})">
           <span style="font-weight:600">${escapeHtml(cat.title)}</span>
           <span class="count-badge">${total}</span>
         </div>
         <div class="menu-actions">
-          <button class="btn-action" onclick="editCategory(${i}, event)" title="编辑">✏️</button>
-          <button class="btn-action" onclick="deleteCategory(${i}, event)" title="删除">🗑️</button>
+          ${editBtn}
+          ${deleteBtn}
         </div>
       `;
       list.appendChild(div);
